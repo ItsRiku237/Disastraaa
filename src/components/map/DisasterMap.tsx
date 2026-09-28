@@ -25,8 +25,11 @@ import { ResourceRequirementPanel } from '@/components/planning/ResourceRequirem
 import { buildResourcePlanningForZone, type ResourcePlanningResult } from '@/lib/planning/resources';
 import { ReportDetailPanel } from '@/components/reports/ReportDetailPanel';
 import { CitizenReportForm } from '@/components/reports/CitizenReportForm';
+import { RoadDetailPanel } from '@/components/roads/RoadDetailPanel';
 import { createCitizenReport, type CitizenReportItem } from '@/lib/reports';
 import { demoCitizenReports } from '@/data/demo/citizenReports';
+import { demoRoadSegments } from '@/data/demo';
+import type { RoadSegment } from '@/lib/roads/types';
 import { mapLayerIds, getMapStyleForTheme } from '@/config/map';
 import { useTheme } from '@/context/ThemeContext';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
@@ -37,6 +40,7 @@ import {
   alertsToGeoJSON,
   infrastructureToGeoJSON,
   blockedRoadsToGeoJSON,
+  roadSegmentsToGeoJSON,
   citizenReportsToGeoJSON,
   cycloneZonesToGeoJSON,
   cycloneTrackToGeoJSON,
@@ -90,7 +94,7 @@ const INITIAL_LAYERS: LayerToggle[] = [
   { id: 'shelters',     label: 'Shelters',         icon: '⛺', color: '#10B981', enabled: true  },
   { id: 'alerts',       label: 'Alerts',           icon: '📡', color: '#F59E0B', enabled: true  },
   { id: 'infra',        label: 'Infrastructure',   icon: '🏥', color: '#22D3EE', enabled: true  },
-  { id: 'blockedRoads', label: 'Blocked Roads',    icon: '🚫', color: '#F97316', enabled: true  },
+  { id: 'blockedRoads', label: 'Road Network & Disruptions', icon: '🛣️', color: '#F97316', enabled: true  },
   { id: 'reports',      label: 'Citizen Reports',  icon: '📍', color: '#8B5CF6', enabled: false },
   { id: 'historical',   label: 'Historical Events', icon: '🕐', color: '#94A3B8', enabled: false },
 ];
@@ -162,6 +166,7 @@ export function DisasterMap({ dataset, className, center, zoom }: DisasterMapPro
   const [layers, setLayers]           = useState<LayerToggle[]>(INITIAL_LAYERS);
   const [activePanel, setActivePanel] = useState<HazardPanelState>(null);
   const [activeReport, setActiveReport] = useState<CitizenReportItem | null>(null);
+  const [activeRoad, setActiveRoad] = useState<RoadSegment | null>(null);
   const [isReportFormOpen, setIsReportFormOpen] = useState(false);
   const [activeTab, setActiveTab]     = useState<ZoneDetailTab>('risk');
   const mapRef                        = useRef<MLMap | null>(null);
@@ -200,7 +205,8 @@ export function DisasterMap({ dataset, className, center, zoom }: DisasterMapPro
     addShelterLayers(map, sheltersToGeoJSON(dataset.shelters));
     addAlertLayers(map, alertsToGeoJSON(dataset.alerts));
     addInfrastructureLayers(map, infrastructureToGeoJSON(dataset.infrastructure));
-    addBlockedRoadLayers(map, blockedRoadsToGeoJSON(dataset.blockedRoads));
+    const roadNetworkData = dataset.roads ?? demoRoadSegments;
+    addBlockedRoadLayers(map, roadSegmentsToGeoJSON(roadNetworkData));
     addCitizenReportLayers(map, citizenReportsToGeoJSON(dataset.citizenReports));
     addCycloneZoneLayers(map, cycloneZonesToGeoJSON(demoCycloneZones));
     addCycloneTrackLayers(
@@ -310,6 +316,7 @@ export function DisasterMap({ dataset, className, center, zoom }: DisasterMapPro
       if (layerId === mapLayerIds.citizenReports) {
         popupRef.current?.remove();
         setActivePanel(null);
+        setActiveRoad(null);
         const reportId = String(props.id ?? '');
         const found = demoCitizenReports.find((r) => r.id === reportId);
         if (found) {
@@ -318,9 +325,24 @@ export function DisasterMap({ dataset, className, center, zoom }: DisasterMapPro
         }
       }
 
+      // ── Road network clicked → open road detail panel (Task 12) ──
+      if (layerId === mapLayerIds.blockedRoads || layerId === `${mapLayerIds.blockedRoads}-casing`) {
+        popupRef.current?.remove();
+        setActivePanel(null);
+        setActiveReport(null);
+        const roadId = String(props.id ?? '');
+        const allRoads = dataset.roads ?? demoRoadSegments;
+        const found = allRoads.find((r) => r.id === roadId);
+        if (found) {
+          setActiveRoad(found);
+          return;
+        }
+      }
+
       // ── Other layers → popup ──
       setActivePanel(null);
       setActiveReport(null);
+      setActiveRoad(null);
       const entry = NON_RISK_CLICKABLE.find((c) => c.layerId === layerId);
       if (!entry) return;
 
@@ -348,6 +370,7 @@ export function DisasterMap({ dataset, className, center, zoom }: DisasterMapPro
   const handleClosePanel = useCallback(() => {
     setActivePanel(null);
     setActiveReport(null);
+    setActiveRoad(null);
   }, []);
 
   const activeAlerts  = dataset.alerts.filter((a) => a.isActive);
@@ -666,6 +689,29 @@ export function DisasterMap({ dataset, className, center, zoom }: DisasterMapPro
         </div>
       )}
 
+      {/* Road Intelligence Detail Panel (Task 12) */}
+      {activeRoad && (
+        <div className={cn(
+          'absolute z-20 pointer-events-auto',
+          'bottom-0 left-0 right-0',
+          'md:bottom-auto md:top-12 md:left-auto md:right-3 md:mt-1',
+          'overflow-y-auto max-h-[75dvh] md:max-h-[calc(100%-4rem)]',
+        )}>
+          <RoadDetailPanel
+            road={activeRoad}
+            onClose={() => setActiveRoad(null)}
+            relatedCitizenReports={dataset.citizenReports ? (dataset.citizenReports as unknown as CitizenReportItem[]) : demoCitizenReports}
+            onSelectReport={(rep) => {
+              setActiveRoad(null);
+              setActiveReport(rep);
+            }}
+            onUpdateRoad={(updated) => {
+              setActiveRoad(updated);
+            }}
+          />
+        </div>
+      )}
+
       {/* Citizen Report Form Modal */}
       {isReportFormOpen && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 pointer-events-auto animate-fade-in">
@@ -685,7 +731,7 @@ export function DisasterMap({ dataset, className, center, zoom }: DisasterMapPro
       {/* Legend */}
       <div className={cn(
         'absolute left-3 pointer-events-none z-10',
-        activePanel || activeReport ? 'hidden md:block bottom-8' : 'bottom-8',
+        activePanel || activeReport || activeRoad ? 'hidden md:block bottom-8' : 'bottom-8',
       )}>
         <MapLegend />
       </div>

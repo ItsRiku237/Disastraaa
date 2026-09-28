@@ -14,6 +14,7 @@ import { demoAlerts }         from './alerts';
 import { demoInfrastructure } from './infrastructure';
 import { demoBlockedRoads }   from './blockedRoads';
 import { demoCitizenReports } from './citizenReports';
+import { demoRoadSegments }   from './roads';
 import type { DisasterDataset } from '@/data/types';
 
 export const demoDataset: DisasterDataset = {
@@ -24,6 +25,7 @@ export const demoDataset: DisasterDataset = {
   infrastructure: demoInfrastructure,
   blockedRoads:   demoBlockedRoads,
   citizenReports: demoCitizenReports,
+  roads:          demoRoadSegments,
   lastRefreshed:  new Date().toISOString(),
 };
 
@@ -36,6 +38,7 @@ export {
   demoInfrastructure,
   demoBlockedRoads,
   demoCitizenReports,
+  demoRoadSegments,
 };
 
 export type { DisasterDataset };

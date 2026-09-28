@@ -16,6 +16,7 @@ import type {
   DemoCitizenReport,
 } from './types';
 import type { HistoricalDisasterEvent } from '@/lib/historical/types';
+import type { RoadSegment } from '@/lib/roads/types';
 
 import type {
   FeatureCollection,
@@ -188,6 +189,40 @@ export function blockedRoadsToGeoJSON(
         reason: r.reason,
         since: r.since,
         alternateRoute: r.alternateRoute ?? null,
+      },
+    })),
+  };
+}
+
+// ── Road Segments (Task 12) → LineString FeatureCollection ────────────────────
+
+export function roadSegmentsToGeoJSON(
+  roads: RoadSegment[],
+): FeatureCollection<LineString, GeoJsonProperties> {
+  return {
+    type: 'FeatureCollection',
+    features: roads.map<Feature<LineString, GeoJsonProperties>>((r) => ({
+      type: 'Feature',
+      id: r.id,
+      geometry: {
+        type: 'LineString',
+        coordinates: r.coordinates,
+      },
+      properties: {
+        id: r.id,
+        name: r.name,
+        code: r.code ?? '',
+        roadType: r.roadType,
+        status: r.status,
+        blockageType: r.blockageType,
+        severity: r.severity,
+        riskScore: r.travelRisk.score,
+        riskSeverity: r.travelRisk.severity,
+        isVerified: r.isVerified,
+        administrativeArea: r.administrativeArea,
+        alternateRoute: r.alternateRoute ?? null,
+        lastUpdated: r.lastUpdated,
+        safeToTravel: r.travelRisk.safeToTravel,
       },
     })),
   };

@@ -70,17 +70,35 @@ export function infraColorExpr(): ExpressionSpecification {
   ];
 }
 
-// ── Blocked road colours ──────────────────────────────────────────────────────
+// ── Road network & status colours (Task 12) ──────────────────────────────────
 
-export function blockedRoadColorExpr(): ExpressionSpecification {
+export function roadStatusColorExpr(): ExpressionSpecification {
   return [
-    'match',
-    ['get', 'severity'],
-    'FULL',    '#EF4444',
-    'PARTIAL', '#F97316',
-    '#F59E0B',
+    'case',
+    ['has', 'status'],
+    [
+      'match',
+      ['get', 'status'],
+      'OPEN',              '#10B981', // Emerald / Passable
+      'CAUTION',           '#F59E0B', // Amber / Hazard Caution
+      'PARTIALLY_BLOCKED', '#F97316', // Orange / Bottleneck
+      'BLOCKED',           '#EF4444', // Red / Impassable
+      'CLOSED',            '#DC2626', // Crimson / Official Barricade
+      'UNKNOWN',           '#64748B', // Slate / Unconfirmed
+      '#94A3B8',
+    ],
+    // Fallback for legacy BlockedRoad severity
+    [
+      'match',
+      ['get', 'severity'],
+      'FULL',    '#EF4444',
+      'PARTIAL', '#F97316',
+      '#F59E0B',
+    ],
   ];
 }
+
+export const blockedRoadColorExpr = roadStatusColorExpr;
 
 // ── Citizen report colours ────────────────────────────────────────────────────
 

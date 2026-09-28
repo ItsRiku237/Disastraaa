@@ -9,6 +9,7 @@
  */
 
 import type { Severity, HazardType, ReportStatus } from '@/types';
+import type { RoadSegment } from '@/lib/roads/types';
 
 // ── Shared ────────────────────────────────────────────────────────────────────
 
@@ -142,6 +143,7 @@ export interface DisasterDataset {
   infrastructure: Infrastructure[];
   blockedRoads: BlockedRoad[];
   citizenReports: DemoCitizenReport[];
+  roads?: RoadSegment[];
   /** ISO-8601 timestamp of last simulated data refresh */
   lastRefreshed: string;
 }
