@@ -68,16 +68,16 @@ function MetricRow({ metric }: { metric: ImpactMetric }) {
     <div className="flex items-center justify-between gap-2 py-1.5">
       <div className="flex items-center gap-2 min-w-0">
         <span className="text-sm flex-shrink-0">{icon}</span>
-        <span className="text-xs text-slate-400 dark:text-slate-400 truncate">{metric.label}</span>
+        <span className="text-xs text-slate-600 dark:text-slate-400 truncate">{metric.label}</span>
       </div>
       <div className="flex items-center gap-2 flex-shrink-0">
-        <span className="text-xs font-mono font-semibold text-slate-100 dark:text-slate-100">
+        <span className="text-xs font-mono font-semibold text-slate-800 dark:text-slate-100">
           {metric.unit === 'km'
             ? `${formatNumber(metric.value)} km`
             : formatNumber(metric.value)}
         </span>
         <span
-          className="text-[9px] text-slate-600 dark:text-slate-600 w-10 text-right"
+          className="text-[9px] text-slate-500 dark:text-slate-400 w-10 text-right"
           title={metric.note}
         >
           ~{confPct}%
@@ -136,7 +136,7 @@ export function ImpactPredictionPanel({
     <div
       className={cn(
         'w-full max-w-sm rounded-xl overflow-hidden',
-        'bg-surface-card border border-white/10 shadow-2xl animate-fade-in',
+        'bg-white dark:bg-surface-card border border-slate-200/80 dark:border-white/10 shadow-2xl animate-fade-in',
         className,
       )}
       role="dialog"
@@ -146,17 +146,17 @@ export function ImpactPredictionPanel({
       <div className={cn('px-4 pt-4 pb-3', s.bg)}>
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <div className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-1">
+            <div className="text-[10px] font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1">
               🎯 Impact Prediction
             </div>
-            <div className="font-semibold text-sm text-slate-100 leading-snug truncate">
+            <div className="font-semibold text-sm text-slate-900 dark:text-slate-100 leading-snug truncate">
               {impact.zoneName}
             </div>
           </div>
           {onClose && (
             <button
               onClick={handleClose}
-              className="flex-shrink-0 w-6 h-6 rounded flex items-center justify-center text-slate-400 hover:text-slate-100 hover:bg-white/10 transition-colors"
+              className="flex-shrink-0 w-6 h-6 rounded flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
               aria-label="Close impact panel"
             >
               ✕
@@ -169,10 +169,10 @@ export function ImpactPredictionPanel({
           <span className={cn('text-[11px] font-bold px-2 py-0.5 rounded-full', s.badge)}>
             {impact.riskLevel}
           </span>
-          <span className="text-[11px] text-slate-300">
+          <span className="text-[11px] text-slate-700 dark:text-slate-300 font-medium">
             {domIcon} {hazardLabel(impact.primaryDriver)}
           </span>
-          <span className="text-[11px] text-slate-500 ml-auto font-mono">
+          <span className="text-[11px] text-slate-500 dark:text-slate-400 ml-auto font-mono">
             {impact.riskScore}/100
           </span>
         </div>
@@ -182,8 +182,8 @@ export function ImpactPredictionPanel({
       <div className="px-4 py-3 space-y-3">
 
         {/* Summary */}
-        <div className="rounded-lg bg-white/5 px-3 py-2">
-          <p className="text-xs text-slate-300 leading-relaxed">{impact.summary}</p>
+        <div className="rounded-lg bg-slate-100/80 dark:bg-white/5 border border-slate-200/60 dark:border-transparent px-3 py-2">
+          <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">{impact.summary}</p>
         </div>
 
         {/* Metrics grid */}

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { brand } from '@/config/brand';
+import { ThemeProvider } from '@/context/ThemeContext';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -33,9 +34,27 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={inter.variable}>
-      <body className="min-h-screen bg-surface-base text-slate-100 font-sans antialiased">
-        {children}
+    <html lang="en" className={inter.variable} suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                var saved = localStorage.getItem('disastraaa-theme');
+                var prefersLight = window.matchMedia('(prefers-color-scheme: light)').matches;
+                var t = (saved === 'light' || saved === 'dark') ? saved : (prefersLight ? 'light' : 'dark');
+                document.documentElement.classList.add(t);
+                document.documentElement.setAttribute('data-theme', t);
+                document.documentElement.style.colorScheme = t;
+              } catch (e) {}
+            `,
+          }}
+        />
+      </head>
+      <body className="min-h-screen bg-surface-base text-slate-100 font-sans antialiased transition-colors duration-200">
+        <ThemeProvider>
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );

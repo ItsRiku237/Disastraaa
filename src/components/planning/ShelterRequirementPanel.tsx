@@ -68,14 +68,14 @@ function ShelterItemRow({ shelter }: { shelter: ShelterSummaryItem }) {
   const barColor = shelter.utilizationPct >= 100 ? 'bg-critical' : shelter.utilizationPct >= 80 ? 'bg-warning' : 'bg-safe';
 
   return (
-    <div className="rounded-lg bg-white/[0.03] border border-white/[0.06] p-2.5 space-y-1.5">
+    <div className="rounded-lg bg-slate-100/80 dark:bg-white/[0.03] border border-slate-200/60 dark:border-white/[0.06] p-2.5 space-y-1.5">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <div className="text-xs font-semibold text-slate-200 truncate" title={shelter.name}>
+          <div className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate" title={shelter.name}>
             ⛺ {shelter.name}
           </div>
           {shelter.location && (
-            <div className="text-[11px] text-slate-400 truncate" title={shelter.location}>
+            <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate" title={shelter.location}>
               {shelter.location}
             </div>
           )}
@@ -87,16 +87,16 @@ function ShelterItemRow({ shelter }: { shelter: ShelterSummaryItem }) {
 
       {/* Capacity & occupancy */}
       <div className="flex items-center justify-between text-[11px]">
-        <span className="text-slate-400">
-          Occupancy: <strong className="text-slate-200 font-mono">{shelter.occupancy.toLocaleString('en-IN')}</strong> / {shelter.capacity.toLocaleString('en-IN')}
+        <span className="text-slate-500 dark:text-slate-400">
+          Occupancy: <strong className="text-slate-800 dark:text-slate-200 font-mono">{shelter.occupancy.toLocaleString('en-IN')}</strong> / {shelter.capacity.toLocaleString('en-IN')}
         </span>
-        <span className="text-slate-400 font-mono">
+        <span className="text-slate-500 dark:text-slate-400 font-mono">
           {shelter.availableSlots.toLocaleString('en-IN')} slots free
         </span>
       </div>
 
       {/* Progress bar */}
-      <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+      <div className="h-1.5 bg-slate-200 dark:bg-white/5 rounded-full overflow-hidden">
         <div className={cn('h-full rounded-full transition-all', barColor)} style={{ width: `${capPct}%` }} />
       </div>
 
@@ -143,7 +143,7 @@ export function ShelterRequirementPanel({
     <div
       className={cn(
         'w-full max-w-sm rounded-xl overflow-hidden',
-        'bg-surface-card border border-white/10 shadow-2xl animate-fade-in',
+        'bg-white dark:bg-surface-card border border-slate-200/80 dark:border-white/10 shadow-2xl animate-fade-in',
         className,
       )}
       role="dialog"
@@ -154,21 +154,21 @@ export function ShelterRequirementPanel({
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
             <div className="flex items-center gap-1.5 mb-1">
-              <span className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">
+              <span className="text-[10px] font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">
                 ⛺ Shelter Planning
               </span>
-              <span className="text-[9px] px-1.5 py-0.2 rounded bg-white/10 text-slate-300 font-mono">
+              <span className="text-[9px] px-1.5 py-0.2 rounded bg-slate-200/80 dark:bg-white/10 text-slate-700 dark:text-slate-300 font-mono">
                 PROTOTYPE
               </span>
             </div>
-            <div className="font-semibold text-sm text-slate-100 leading-snug truncate" title={planning.zoneName}>
+            <div className="font-semibold text-sm text-slate-900 dark:text-slate-100 leading-snug truncate" title={planning.zoneName}>
               {planning.zoneName}
             </div>
           </div>
           {onClose && (
             <button
               onClick={handleClose}
-              className="flex-shrink-0 w-6 h-6 rounded flex items-center justify-center text-slate-400 hover:text-slate-100 hover:bg-white/10 transition-colors"
+              className="flex-shrink-0 w-6 h-6 rounded flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
               aria-label="Close shelter panel"
             >
               ✕
@@ -182,8 +182,8 @@ export function ShelterRequirementPanel({
             <span>{cfg.icon}</span>
             <span>{cfg.label.toUpperCase()}</span>
           </span>
-          <span className="text-[11px] text-slate-400">
-            Utilization: <strong className="font-mono text-slate-200">{planning.utilizationPct}%</strong>
+          <span className="text-[11px] text-slate-600 dark:text-slate-400">
+            Utilization: <strong className="font-mono text-slate-900 dark:text-slate-200">{planning.utilizationPct}%</strong>
           </span>
         </div>
       </div>
@@ -194,11 +194,11 @@ export function ShelterRequirementPanel({
         {/* ── Core Planning Output Grid (Requirement 4) ── */}
         <div className="grid grid-cols-2 gap-2">
           {/* Projected Evacuation Demand */}
-          <div className="rounded-lg bg-white/5 border border-white/[0.06] p-2.5">
-            <div className="text-[10px] text-slate-400 uppercase font-medium">
+          <div className="rounded-lg bg-slate-100/80 dark:bg-white/5 border border-slate-200/60 dark:border-white/[0.06] p-2.5">
+            <div className="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-medium">
               Projected Demand
             </div>
-            <div className="text-base font-bold text-slate-100 font-mono mt-0.5">
+            <div className="text-base font-bold text-slate-900 dark:text-slate-100 font-mono mt-0.5">
               {planning.projectedDemand.toLocaleString('en-IN')}
             </div>
             <div className="text-[10px] text-slate-500 mt-0.5">
@@ -207,11 +207,11 @@ export function ShelterRequirementPanel({
           </div>
 
           {/* Available Capacity */}
-          <div className="rounded-lg bg-white/5 border border-white/[0.06] p-2.5">
-            <div className="text-[10px] text-slate-400 uppercase font-medium">
+          <div className="rounded-lg bg-slate-100/80 dark:bg-white/5 border border-slate-200/60 dark:border-white/[0.06] p-2.5">
+            <div className="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-medium">
               Available Capacity
             </div>
-            <div className="text-base font-bold text-slate-100 font-mono mt-0.5">
+            <div className="text-base font-bold text-slate-900 dark:text-slate-100 font-mono mt-0.5">
               {planning.availableCapacity.toLocaleString('en-IN')}
             </div>
             <div className="text-[10px] text-slate-500 mt-0.5 truncate" title={`Total: ${planning.totalCapacity.toLocaleString('en-IN')}`}>
@@ -226,7 +226,7 @@ export function ShelterRequirementPanel({
               ? 'bg-critical/10 border-critical/20'
               : 'bg-safe/10 border-safe/20',
           )}>
-            <div className="text-[10px] uppercase font-medium text-slate-400">
+            <div className="text-[10px] uppercase font-medium text-slate-600 dark:text-slate-400">
               {isShortage ? 'Capacity Gap (Deficit)' : 'Capacity Surplus'}
             </div>
             <div className={cn(
@@ -237,19 +237,19 @@ export function ShelterRequirementPanel({
                 ? `-${planning.capacityGap.toLocaleString('en-IN')}`
                 : `+${surplus.toLocaleString('en-IN')}`}
             </div>
-            <div className="text-[10px] text-slate-400 mt-0.5">
+            <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
               {isShortage ? 'people unaccommodated' : 'cushion available'}
             </div>
           </div>
 
           {/* Additional Shelters Needed */}
-          <div className="rounded-lg bg-white/5 border border-white/[0.06] p-2.5">
-            <div className="text-[10px] text-slate-400 uppercase font-medium">
+          <div className="rounded-lg bg-slate-100/80 dark:bg-white/5 border border-slate-200/60 dark:border-white/[0.06] p-2.5">
+            <div className="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-medium">
               Additional Shelters
             </div>
             <div className={cn(
               'text-base font-bold font-mono mt-0.5',
-              planning.additionalSheltersNeeded > 0 ? 'text-critical' : 'text-slate-100',
+              planning.additionalSheltersNeeded > 0 ? 'text-critical' : 'text-slate-900 dark:text-slate-100',
             )}>
               {planning.additionalSheltersNeeded > 0
                 ? `${planning.additionalSheltersNeeded} needed`
@@ -263,13 +263,13 @@ export function ShelterRequirementPanel({
 
         {/* ── Capacity vs Demand Progress Bar ── */}
         <div className="space-y-1">
-          <div className="flex justify-between text-[11px] text-slate-400">
+          <div className="flex justify-between text-[11px] text-slate-500 dark:text-slate-400">
             <span>Capacity Utilization</span>
             <span className={cn('font-mono font-bold', cfg.text)}>
               {planning.utilizationPct}% {isShortage ? '(Exceeded)' : ''}
             </span>
           </div>
-          <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+          <div className="h-2 bg-slate-200 dark:bg-white/5 rounded-full overflow-hidden">
             <div
               className={cn('h-full rounded-full transition-all', cfg.barColor)}
               style={{ width: `${Math.min(planning.utilizationPct, 100)}%` }}

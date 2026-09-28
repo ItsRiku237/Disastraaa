@@ -65,14 +65,14 @@ function FactorBar({ label, icon, score }: FactorBarProps) {
   return (
     <div className="flex items-center gap-2 text-xs">
       <span className="w-4 flex-shrink-0 text-center">{icon}</span>
-      <span className="w-32 flex-shrink-0 text-slate-400 truncate">{label}</span>
-      <div className="flex-1 h-1.5 bg-white/5 rounded-full overflow-hidden">
+      <span className="w-32 flex-shrink-0 text-slate-600 dark:text-slate-400 truncate">{label}</span>
+      <div className="flex-1 h-1.5 bg-slate-200 dark:bg-white/5 rounded-full overflow-hidden">
         <div
           className={cn('h-full rounded-full transition-all duration-500', barColor)}
           style={{ width: `${rounded}%` }}
         />
       </div>
-      <span className="w-8 text-right font-mono text-slate-300 flex-shrink-0">{rounded}</span>
+      <span className="w-8 text-right font-mono text-slate-800 dark:text-slate-300 flex-shrink-0 font-medium">{rounded}</span>
     </div>
   );
 }
@@ -102,7 +102,7 @@ function ScoreRing({ score, severity }: ScoreRingProps) {
           fill="none"
           stroke="currentColor"
           strokeWidth="3"
-          className="text-white/5"
+          className="text-slate-200 dark:text-white/5"
         />
         <circle
           cx="32" cy="32" r={r}
@@ -148,7 +148,7 @@ export function CycloneRiskPanel({
     <div
       className={cn(
         'w-full max-w-sm rounded-xl overflow-hidden',
-        'bg-surface-card border border-white/10 shadow-2xl',
+        'bg-white dark:bg-surface-card border border-slate-200/80 dark:border-white/10 shadow-2xl',
         'animate-fade-in',
         className,
       )}
@@ -159,17 +159,17 @@ export function CycloneRiskPanel({
       <div className={cn('px-4 pt-4 pb-3', styles.bg)}>
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <div className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-1">
+            <div className="text-[10px] font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1">
               🌀 Cyclone Risk Assessment
             </div>
-            <div className="font-semibold text-sm text-slate-100 leading-snug truncate">
+            <div className="font-semibold text-sm text-slate-900 dark:text-slate-100 leading-snug truncate">
               {zoneName}
             </div>
           </div>
           {onClose && (
             <button
               onClick={handleClose}
-              className="flex-shrink-0 w-6 h-6 rounded flex items-center justify-center text-slate-400 hover:text-slate-100 hover:bg-white/10 transition-colors"
+              className="flex-shrink-0 w-6 h-6 rounded flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
               aria-label="Close panel"
             >
               ✕
@@ -184,7 +184,7 @@ export function CycloneRiskPanel({
             <div className={cn('text-lg font-bold leading-tight', styles.text)}>
               {result.severity}
             </div>
-            <div className="text-xs text-slate-400 mt-0.5 leading-snug max-w-[160px]">
+            <div className="text-xs text-slate-600 dark:text-slate-400 mt-0.5 leading-snug max-w-[160px]">
               {summary}
             </div>
           </div>
@@ -196,24 +196,24 @@ export function CycloneRiskPanel({
 
         {/* Key stats */}
         <div className="grid grid-cols-2 gap-2">
-          <div className="rounded-lg bg-white/5 px-3 py-2">
+          <div className="rounded-lg bg-slate-100/80 dark:bg-white/5 border border-slate-200/60 dark:border-transparent px-3 py-2">
             <div className="text-[10px] text-slate-500 uppercase tracking-wider">Affected Pop.</div>
-            <div className="text-sm font-semibold text-slate-100 mt-0.5">
+            <div className="text-sm font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
               ~{formatNumber(result.affectedPopulation)}
             </div>
           </div>
-          <div className="rounded-lg bg-white/5 px-3 py-2">
+          <div className="rounded-lg bg-slate-100/80 dark:bg-white/5 border border-slate-200/60 dark:border-transparent px-3 py-2">
             <div className="text-[10px] text-slate-500 uppercase tracking-wider">Confidence</div>
-            <div className="text-sm font-semibold text-slate-100 mt-0.5">
+            <div className="text-sm font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
               {confidencePct}%
             </div>
           </div>
         </div>
 
         {/* Key drivers narrative */}
-        <div className="rounded-lg bg-white/5 px-3 py-2">
+        <div className="rounded-lg bg-slate-100/80 dark:bg-white/5 border border-slate-200/60 dark:border-transparent px-3 py-2">
           <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">Key Drivers</div>
-          <p className="text-xs text-slate-300 leading-relaxed">{driverNarrative}</p>
+          <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">{driverNarrative}</p>
         </div>
 
         {/* Factor bars */}

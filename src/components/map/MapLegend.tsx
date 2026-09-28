@@ -23,9 +23,9 @@ export function MapLegend({ className }: MapLegendProps) {
     <div
       className={cn(
         'pointer-events-auto rounded-lg px-3 py-2',
-        'bg-surface-elevated/95 dark:bg-surface-elevated/95 backdrop-blur-sm',
-        'border border-white/10',
-        'shadow-lg',
+        'bg-white/95 dark:bg-surface-elevated/95 backdrop-blur-md',
+        'border border-slate-200/80 dark:border-white/10',
+        'shadow-lg map-panel',
         className,
       )}
     >
@@ -39,7 +39,7 @@ export function MapLegend({ className }: MapLegendProps) {
               className="w-2.5 h-2.5 rounded-sm flex-shrink-0"
               style={{ backgroundColor: item.color }}
             />
-            <span className="text-[11px] text-slate-300">{item.label}</span>
+            <span className="text-[11px] text-slate-700 dark:text-slate-300 font-medium">{item.label}</span>
           </div>
         ))}
       </div>

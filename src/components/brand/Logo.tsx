@@ -47,7 +47,7 @@ export function Logo({ size = 'md', showName = true, href = '/', className }: Lo
       </span>
 
       {showName && (
-        <span className={cn(sz.text, 'font-bold tracking-tight text-slate-100')}>
+        <span className={cn(sz.text, 'font-bold tracking-tight text-slate-900 dark:text-slate-100')}>
           {brand.name}
         </span>
       )}

@@ -21,7 +21,9 @@ import { MultiHazardPanel } from '@/components/risk/MultiHazardPanel';
 import { ImpactPredictionPanel } from '@/components/impact/ImpactPredictionPanel';
 import { ShelterRequirementPanel } from '@/components/planning/ShelterRequirementPanel';
 import { buildShelterPlanningForZone, type ShelterPlanningResult } from '@/lib/planning/shelter';
-import { mapLayerIds } from '@/config/map';
+import { mapLayerIds, getMapStyleForTheme } from '@/config/map';
+import { useTheme } from '@/context/ThemeContext';
+import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import {
   riskZonesToGeoJSON,
   floodAreasToGeoJSON,
@@ -149,12 +151,19 @@ interface DisasterMapProps {
 }
 
 export function DisasterMap({ dataset, className, center, zoom }: DisasterMapProps) {
+  const { theme } = useTheme();
+  const mapStyle = getMapStyleForTheme(theme);
   const [layers, setLayers]           = useState<LayerToggle[]>(INITIAL_LAYERS);
   const [activePanel, setActivePanel] = useState<HazardPanelState>(null);
   const [activeTab, setActiveTab]     = useState<ZoneDetailTab>('risk');
   const mapRef                        = useRef<MLMap | null>(null);
   const popupRef                      = useRef<import('maplibre-gl').Popup | null>(null);
   const prevLayers                    = useRef<LayerToggle[]>(INITIAL_LAYERS);
+  const layersRef                     = useRef<LayerToggle[]>(INITIAL_LAYERS);
+
+  useEffect(() => {
+    layersRef.current = layers;
+  }, [layers]);
 
   // ── Layer visibility sync ────────────────────────────────────────────────
   useEffect(() => {
@@ -191,7 +200,8 @@ export function DisasterMap({ dataset, className, center, zoom }: DisasterMapPro
     );
     addHistoricalEventLayers(map, historicalEventsToGeoJSON(demoHistoricalEvents));
 
-    INITIAL_LAYERS.forEach((layer) => {
+    // Preserve active layer states across initial load & style reloads
+    layersRef.current.forEach((layer) => {
       const vis = layer.enabled ? 'visible' : 'none';
       LAYER_GROUP_MAP[layer.id]?.forEach((mlId) => {
         if (map.getLayer(mlId)) map.setLayoutProperty(mlId, 'visibility', vis);
@@ -298,26 +308,30 @@ export function DisasterMap({ dataset, className, center, zoom }: DisasterMapPro
   return (
     <MapContainer
       className={className}
+      style={mapStyle}
       viewState={{ center: center ?? [85.8, 20.0], zoom: zoom ?? 7.0 }}
       onMapReady={handleMapReady}
     >
       {/* Demo banner */}
       <div className="absolute top-0 left-0 right-0 flex justify-center pointer-events-none z-20 px-4">
-        <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-warning/15 border border-warning/30 text-warning text-[11px] font-medium backdrop-blur-sm whitespace-nowrap">
+        <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-warning/15 border border-warning/30 text-warning text-[11px] font-medium backdrop-blur-sm whitespace-nowrap map-panel">
           <span className="w-1.5 h-1.5 rounded-full bg-warning animate-pulse-slow flex-shrink-0" />
           DEMO / SIMULATED DATA — Not real government data
         </div>
       </div>
 
-      {/* Layer control */}
+      {/* Map tools: Layer control + Theme switch */}
       <div className="absolute left-3 top-12 pointer-events-none z-10 flex flex-col gap-2">
-        <LayerControl layers={layers} onToggle={handleToggle} className="mt-1" />
+        <div className="flex items-center gap-2 pointer-events-auto">
+          <LayerControl layers={layers} onToggle={handleToggle} className="mt-1" />
+          <ThemeToggle size="sm" showLabel={true} className="mt-1 shadow-lg backdrop-blur-md map-panel font-medium" />
+        </div>
       </div>
 
       {/* Alert badge */}
       {activeAlerts.length > 0 && (
         <div className="absolute top-12 right-3 pointer-events-none z-10 mt-1">
-          <div className="pointer-events-auto flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface-elevated/95 border border-white/10 shadow-lg backdrop-blur-sm">
+          <div className="pointer-events-auto flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface-elevated/95 border border-white/10 shadow-lg backdrop-blur-sm map-panel">
             <span className="w-2 h-2 rounded-full bg-critical animate-pulse-slow flex-shrink-0" />
             <span className="text-xs font-semibold text-slate-200 whitespace-nowrap">
               {activeAlerts.length} Active Alert{activeAlerts.length !== 1 ? 's' : ''}
@@ -340,16 +354,16 @@ export function DisasterMap({ dataset, className, center, zoom }: DisasterMapPro
           'overflow-y-auto max-h-[65dvh] md:max-h-[calc(100%-5rem)]',
         )}>
           {activePanel.type === 'multiHazard' ? (
-            <div className="flex flex-col">
+            <div className="flex flex-col rounded-xl overflow-hidden shadow-2xl border border-slate-200/80 dark:border-white/10 map-panel">
               {/* Tab bar */}
-              <div className="flex bg-surface-elevated/95 border-b border-white/10 backdrop-blur-sm rounded-t-xl md:rounded-t-xl overflow-hidden">
+              <div className="flex bg-slate-100/95 dark:bg-surface-elevated/95 border-b border-slate-200 dark:border-white/10 backdrop-blur-md rounded-t-xl overflow-hidden">
                 <button
                   onClick={() => setActiveTab('risk')}
                   className={cn(
                     'flex-1 py-2 text-[11px] font-semibold uppercase tracking-wider transition-colors',
                     activeTab === 'risk'
-                      ? 'text-slate-100 bg-white/8'
-                      : 'text-slate-500 hover:text-slate-300',
+                      ? 'text-slate-900 dark:text-slate-100 bg-white dark:bg-white/10 shadow-sm dark:shadow-none font-bold'
+                      : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-white/5',
                   )}
                 >
                   ⚡ Risk
@@ -359,8 +373,8 @@ export function DisasterMap({ dataset, className, center, zoom }: DisasterMapPro
                   className={cn(
                     'flex-1 py-2 text-[11px] font-semibold uppercase tracking-wider transition-colors',
                     activeTab === 'impact'
-                      ? 'text-slate-100 bg-white/8'
-                      : 'text-slate-500 hover:text-slate-300',
+                      ? 'text-slate-900 dark:text-slate-100 bg-white dark:bg-white/10 shadow-sm dark:shadow-none font-bold'
+                      : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-white/5',
                   )}
                 >
                   🎯 Impact
@@ -370,8 +384,8 @@ export function DisasterMap({ dataset, className, center, zoom }: DisasterMapPro
                   className={cn(
                     'flex-1 py-2 text-[11px] font-semibold uppercase tracking-wider transition-colors',
                     activeTab === 'shelter'
-                      ? 'text-slate-100 bg-white/8'
-                      : 'text-slate-500 hover:text-slate-300',
+                      ? 'text-slate-900 dark:text-slate-100 bg-white dark:bg-white/10 shadow-sm dark:shadow-none font-bold'
+                      : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-white/5',
                   )}
                 >
                   ⛺ Shelter
@@ -384,32 +398,32 @@ export function DisasterMap({ dataset, className, center, zoom }: DisasterMapPro
                   locationName={activePanel.name}
                   explanation={activePanel.explanation}
                   onClose={handleClosePanel}
-                  className="rounded-t-none rounded-b-none md:rounded-b-xl"
+                  className="rounded-t-none rounded-b-none md:rounded-b-xl border-none shadow-none"
                 />
               ) : activeTab === 'impact' && impactResult ? (
                 <ImpactPredictionPanel
                   impact={impactResult}
                   onClose={handleClosePanel}
-                  className="rounded-t-none rounded-b-none md:rounded-b-xl"
+                  className="rounded-t-none rounded-b-none md:rounded-b-xl border-none shadow-none"
                 />
               ) : shelterPlanning ? (
                 <ShelterRequirementPanel
                   planning={shelterPlanning}
                   onClose={handleClosePanel}
-                  className="rounded-t-none rounded-b-none md:rounded-b-xl"
+                  className="rounded-t-none rounded-b-none md:rounded-b-xl border-none shadow-none"
                 />
               ) : null}
             </div>
           ) : activePanel.type === 'flood' ? (
-            <div className="flex flex-col">
-              <div className="flex bg-surface-elevated/95 border-b border-white/10 backdrop-blur-sm rounded-t-xl md:rounded-t-xl overflow-hidden">
+            <div className="flex flex-col rounded-xl overflow-hidden shadow-2xl border border-slate-200/80 dark:border-white/10 map-panel">
+              <div className="flex bg-slate-100/95 dark:bg-surface-elevated/95 border-b border-slate-200 dark:border-white/10 backdrop-blur-md rounded-t-xl overflow-hidden">
                 <button
                   onClick={() => setActiveTab('risk')}
                   className={cn(
                     'flex-1 py-2 text-[11px] font-semibold uppercase tracking-wider transition-colors',
                     activeTab === 'risk'
-                      ? 'text-slate-100 bg-white/8'
-                      : 'text-slate-500 hover:text-slate-300',
+                      ? 'text-slate-900 dark:text-slate-100 bg-white dark:bg-white/10 shadow-sm dark:shadow-none font-bold'
+                      : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-white/5',
                   )}
                 >
                   ⚡ Risk
@@ -419,8 +433,8 @@ export function DisasterMap({ dataset, className, center, zoom }: DisasterMapPro
                   className={cn(
                     'flex-1 py-2 text-[11px] font-semibold uppercase tracking-wider transition-colors',
                     activeTab === 'shelter'
-                      ? 'text-slate-100 bg-white/8'
-                      : 'text-slate-500 hover:text-slate-300',
+                      ? 'text-slate-900 dark:text-slate-100 bg-white dark:bg-white/10 shadow-sm dark:shadow-none font-bold'
+                      : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-white/5',
                   )}
                 >
                   ⛺ Shelter
@@ -430,27 +444,27 @@ export function DisasterMap({ dataset, className, center, zoom }: DisasterMapPro
                 <ShelterRequirementPanel
                   planning={shelterPlanning}
                   onClose={handleClosePanel}
-                  className="rounded-t-none rounded-b-none md:rounded-b-xl"
+                  className="rounded-t-none rounded-b-none md:rounded-b-xl border-none shadow-none"
                 />
               ) : (
                 <FloodRiskPanel
                   zoneName={activePanel.name}
                   explanation={activePanel.explanation}
                   onClose={handleClosePanel}
-                  className="rounded-t-none rounded-b-none md:rounded-b-xl"
+                  className="rounded-t-none rounded-b-none md:rounded-b-xl border-none shadow-none"
                 />
               )}
             </div>
           ) : (
-            <div className="flex flex-col">
-              <div className="flex bg-surface-elevated/95 border-b border-white/10 backdrop-blur-sm rounded-t-xl md:rounded-t-xl overflow-hidden">
+            <div className="flex flex-col rounded-xl overflow-hidden shadow-2xl border border-slate-200/80 dark:border-white/10 map-panel">
+              <div className="flex bg-slate-100/95 dark:bg-surface-elevated/95 border-b border-slate-200 dark:border-white/10 backdrop-blur-md rounded-t-xl overflow-hidden">
                 <button
                   onClick={() => setActiveTab('risk')}
                   className={cn(
                     'flex-1 py-2 text-[11px] font-semibold uppercase tracking-wider transition-colors',
                     activeTab === 'risk'
-                      ? 'text-slate-100 bg-white/8'
-                      : 'text-slate-500 hover:text-slate-300',
+                      ? 'text-slate-900 dark:text-slate-100 bg-white dark:bg-white/10 shadow-sm dark:shadow-none font-bold'
+                      : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-white/5',
                   )}
                 >
                   ⚡ Risk
@@ -460,8 +474,8 @@ export function DisasterMap({ dataset, className, center, zoom }: DisasterMapPro
                   className={cn(
                     'flex-1 py-2 text-[11px] font-semibold uppercase tracking-wider transition-colors',
                     activeTab === 'shelter'
-                      ? 'text-slate-100 bg-white/8'
-                      : 'text-slate-500 hover:text-slate-300',
+                      ? 'text-slate-900 dark:text-slate-100 bg-white dark:bg-white/10 shadow-sm dark:shadow-none font-bold'
+                      : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-white/5',
                   )}
                 >
                   ⛺ Shelter
@@ -471,14 +485,14 @@ export function DisasterMap({ dataset, className, center, zoom }: DisasterMapPro
                 <ShelterRequirementPanel
                   planning={shelterPlanning}
                   onClose={handleClosePanel}
-                  className="rounded-t-none rounded-b-none md:rounded-b-xl"
+                  className="rounded-t-none rounded-b-none md:rounded-b-xl border-none shadow-none"
                 />
               ) : (
                 <CycloneRiskPanel
                   zoneName={activePanel.name}
                   explanation={activePanel.explanation}
                   onClose={handleClosePanel}
-                  className="rounded-t-none rounded-b-none md:rounded-b-xl"
+                  className="rounded-t-none rounded-b-none md:rounded-b-xl border-none shadow-none"
                 />
               )}
             </div>

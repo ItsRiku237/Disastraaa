@@ -5,17 +5,13 @@
  * components never contain magic strings or hard-coded coordinates.
  */
 
-/** Resolve the correct map tile style URL based on color-scheme preference. */
-function resolveMapStyle(): string {
-  const dark =
-    (process.env.NEXT_PUBLIC_MAP_STYLE_URL as string | undefined) ??
-    'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json';
-  const light =
-    (process.env.NEXT_PUBLIC_MAP_STYLE_LIGHT_URL as string | undefined) ??
-    'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json';
+/** Resolve the correct map tile style URL by theme */
+export function getMapStyleForTheme(theme: 'dark' | 'light'): string {
+  return theme === 'light' ? mapConfig.lightStyle : mapConfig.darkStyle;
+}
 
-  if (typeof window === 'undefined') return dark;
-  return window.matchMedia('(prefers-color-scheme: light)').matches ? light : dark;
+function resolveMapStyle(): string {
+  return mapConfig.darkStyle;
 }
 
 export const mapConfig = {

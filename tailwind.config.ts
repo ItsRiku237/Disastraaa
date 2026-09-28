@@ -1,7 +1,7 @@
 import type { Config } from 'tailwindcss';
 
 const config: Config = {
-  darkMode: 'media',
+  darkMode: 'class',
   content: [
     './src/app/**/*.{js,ts,jsx,tsx,mdx}',
     './src/components/**/*.{js,ts,jsx,tsx,mdx}',
@@ -21,12 +21,12 @@ const config: Config = {
         warning:  '#F59E0B',
         critical: '#EF4444',
         info:     '#3B82F6',
-        // ── Background surface hierarchy ─────────────────────────
+        // ── Background surface hierarchy (adaptive Light & Dark mode) ──
         surface: {
-          base:     '#080C18',
-          card:     '#0E1422',
-          elevated: '#141B2D',
-          overlay:  '#1A2236',
+          base:     'rgb(var(--surface-base-rgb, 8 12 24) / <alpha-value>)',
+          card:     'rgb(var(--surface-card-rgb, 14 20 34) / <alpha-value>)',
+          elevated: 'rgb(var(--surface-elevated-rgb, 20 27 45) / <alpha-value>)',
+          overlay:  'rgb(var(--surface-overlay-rgb, 26 34 54) / <alpha-value>)',
         },
       },
       fontFamily: {
