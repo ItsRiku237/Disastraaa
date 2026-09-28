@@ -50,3 +50,6 @@ export { computedFloodRisks } from './computedFloodRisks';
 
 // Multi-hazard composite results
 export { computedMultiHazardRisks, ZONE_TO_MULTI_HAZARD_ID } from './computedMultiHazardRisks';
+
+// Resource inventory exports (Task 8)
+export { DEMO_ZONE_INVENTORIES, getZoneResourceInventory } from './resources';

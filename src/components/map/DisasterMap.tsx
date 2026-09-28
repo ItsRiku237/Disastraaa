@@ -21,6 +21,8 @@ import { MultiHazardPanel } from '@/components/risk/MultiHazardPanel';
 import { ImpactPredictionPanel } from '@/components/impact/ImpactPredictionPanel';
 import { ShelterRequirementPanel } from '@/components/planning/ShelterRequirementPanel';
 import { buildShelterPlanningForZone, type ShelterPlanningResult } from '@/lib/planning/shelter';
+import { ResourceRequirementPanel } from '@/components/planning/ResourceRequirementPanel';
+import { buildResourcePlanningForZone, type ResourcePlanningResult } from '@/lib/planning/resources';
 import { mapLayerIds, getMapStyleForTheme } from '@/config/map';
 import { useTheme } from '@/context/ThemeContext';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
@@ -126,7 +128,7 @@ type HazardPanelState =
   | { type: 'cyclone';     id: string; name: string; explanation: CycloneRiskExplanation }
   | null;
 
-type ZoneDetailTab = 'risk' | 'impact' | 'shelter';
+type ZoneDetailTab = 'risk' | 'impact' | 'shelter' | 'resources';
 
 // ── Impact helper ─────────────────────────────────────────────────────────────
 
@@ -305,6 +307,27 @@ export function DisasterMap({ dataset, className, center, zoom }: DisasterMapPro
         })
       : null;
 
+  // Compute resource requirement planning result for whichever panel is active
+  const resourcePlanning: ResourcePlanningResult | null =
+    activePanel
+      ? buildResourcePlanningForZone({
+          zoneId: activePanel.id,
+          zoneName: activePanel.name,
+          affectedPopulation: activePanel.explanation.result.affectedPopulation,
+          severity: activePanel.explanation.result.severity,
+          riskScore: activePanel.explanation.result.score,
+          dominantHazard:
+            activePanel.type === 'cyclone'
+              ? 'CYCLONE'
+              : activePanel.type === 'flood'
+              ? 'FLOOD'
+              : activePanel.explanation.result.dominantHazard,
+          impactResult,
+          shelterPlanning,
+          historicalEvents: demoHistoricalEvents,
+        })
+      : null;
+
   return (
     <MapContainer
       className={className}
@@ -390,6 +413,17 @@ export function DisasterMap({ dataset, className, center, zoom }: DisasterMapPro
                 >
                   ⛺ Shelter
                 </button>
+                <button
+                  onClick={() => setActiveTab('resources')}
+                  className={cn(
+                    'flex-1 py-2 text-[11px] font-semibold uppercase tracking-wider transition-colors',
+                    activeTab === 'resources'
+                      ? 'text-slate-900 dark:text-slate-100 bg-white dark:bg-white/10 shadow-sm dark:shadow-none font-bold'
+                      : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-white/5',
+                  )}
+                >
+                  📦 Resources
+                </button>
               </div>
 
               {/* Panel content */}
@@ -403,6 +437,12 @@ export function DisasterMap({ dataset, className, center, zoom }: DisasterMapPro
               ) : activeTab === 'impact' && impactResult ? (
                 <ImpactPredictionPanel
                   impact={impactResult}
+                  onClose={handleClosePanel}
+                  className="rounded-t-none rounded-b-none md:rounded-b-xl border-none shadow-none"
+                />
+              ) : activeTab === 'resources' && resourcePlanning ? (
+                <ResourceRequirementPanel
+                  planning={resourcePlanning}
                   onClose={handleClosePanel}
                   className="rounded-t-none rounded-b-none md:rounded-b-xl border-none shadow-none"
                 />
@@ -439,8 +479,25 @@ export function DisasterMap({ dataset, className, center, zoom }: DisasterMapPro
                 >
                   ⛺ Shelter
                 </button>
+                <button
+                  onClick={() => setActiveTab('resources')}
+                  className={cn(
+                    'flex-1 py-2 text-[11px] font-semibold uppercase tracking-wider transition-colors',
+                    activeTab === 'resources'
+                      ? 'text-slate-900 dark:text-slate-100 bg-white dark:bg-white/10 shadow-sm dark:shadow-none font-bold'
+                      : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-white/5',
+                  )}
+                >
+                  📦 Resources
+                </button>
               </div>
-              {activeTab === 'shelter' && shelterPlanning ? (
+              {activeTab === 'resources' && resourcePlanning ? (
+                <ResourceRequirementPanel
+                  planning={resourcePlanning}
+                  onClose={handleClosePanel}
+                  className="rounded-t-none rounded-b-none md:rounded-b-xl border-none shadow-none"
+                />
+              ) : activeTab === 'shelter' && shelterPlanning ? (
                 <ShelterRequirementPanel
                   planning={shelterPlanning}
                   onClose={handleClosePanel}
@@ -480,8 +537,25 @@ export function DisasterMap({ dataset, className, center, zoom }: DisasterMapPro
                 >
                   ⛺ Shelter
                 </button>
+                <button
+                  onClick={() => setActiveTab('resources')}
+                  className={cn(
+                    'flex-1 py-2 text-[11px] font-semibold uppercase tracking-wider transition-colors',
+                    activeTab === 'resources'
+                      ? 'text-slate-900 dark:text-slate-100 bg-white dark:bg-white/10 shadow-sm dark:shadow-none font-bold'
+                      : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-white/5',
+                  )}
+                >
+                  📦 Resources
+                </button>
               </div>
-              {activeTab === 'shelter' && shelterPlanning ? (
+              {activeTab === 'resources' && resourcePlanning ? (
+                <ResourceRequirementPanel
+                  planning={resourcePlanning}
+                  onClose={handleClosePanel}
+                  className="rounded-t-none rounded-b-none md:rounded-b-xl border-none shadow-none"
+                />
+              ) : activeTab === 'shelter' && shelterPlanning ? (
                 <ShelterRequirementPanel
                   planning={shelterPlanning}
                   onClose={handleClosePanel}
@@ -497,6 +571,7 @@ export function DisasterMap({ dataset, className, center, zoom }: DisasterMapPro
               )}
             </div>
           )}
+
         </div>
       )}
 
