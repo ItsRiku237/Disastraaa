@@ -1,0 +1,66 @@
+/**
+ * Navigation configuration.
+ *
+ * All nav links and dashboard sidebar groups are defined here.
+ * Components consume these arrays — no nav structure is hard-coded
+ * inside layout components.
+ */
+
+export interface NavItem {
+  label: string;
+  href: string;
+  /** Lucide icon name — resolved to component inside layout components */
+  icon?: string;
+  description?: string;
+  badge?: string;
+  isExternal?: boolean;
+}
+
+export interface NavGroup {
+  label: string;
+  items: NavItem[];
+}
+
+/** Top-level public navigation links */
+export const publicNavLinks: NavItem[] = [
+  { label: 'Map',     href: '/map',     description: 'Live disaster intelligence map' },
+  { label: 'Alerts',  href: '/alerts',  description: 'Active warnings and alerts' },
+  { label: 'Reports', href: '/reports', description: 'Citizen disaster reports' },
+  { label: 'Travel',  href: '/travel',  description: 'Route safety assessment' },
+  { label: 'About',   href: '/about',   description: 'About the platform' },
+];
+
+/** Dashboard sidebar navigation — grouped by function */
+export const dashboardNavGroups: NavGroup[] = [
+  {
+    label: 'Overview',
+    items: [
+      { label: 'Dashboard', href: '/dashboard',  icon: 'LayoutDashboard' },
+      { label: 'Live Map',  href: '/map',         icon: 'Map' },
+      { label: 'Alerts',    href: '/alerts',      icon: 'Bell' },
+    ],
+  },
+  {
+    label: 'Field',
+    items: [
+      { label: 'Reports',   href: '/reports/manage', icon: 'FileText' },
+      { label: 'Shelters',  href: '/shelters',        icon: 'Home' },
+      { label: 'Resources', href: '/resources',       icon: 'Package' },
+    ],
+  },
+  {
+    label: 'Intelligence',
+    items: [
+      { label: 'Risk Analysis',     href: '/state',       icon: 'Activity' },
+      { label: 'Historical',        href: '/historical',  icon: 'Clock' },
+      { label: 'Planning',          href: '/planning',    icon: 'Calendar' },
+      { label: 'Operations',        href: '/operations',  icon: 'Truck' },
+    ],
+  },
+  {
+    label: 'System',
+    items: [
+      { label: 'Settings', href: '/settings', icon: 'Settings' },
+    ],
+  },
+];
