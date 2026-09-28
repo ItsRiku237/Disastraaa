@@ -8,7 +8,7 @@
  * All geographic coordinates are [longitude, latitude] (GeoJSON order).
  */
 
-import type { Severity, HazardType } from '@/types';
+import type { Severity, HazardType, ReportStatus } from '@/types';
 
 // ── Shared ────────────────────────────────────────────────────────────────────
 
@@ -127,7 +127,8 @@ export interface DemoCitizenReport {
   address: string;
   confirmCount: number;
   createdAt: string;
-  status: 'PENDING' | 'COMMUNITY_CONFIRMED' | 'VERIFIED';
+  status: ReportStatus;
+  severity?: Severity;
 }
 
 // ── Aggregate dataset ─────────────────────────────────────────────────────────

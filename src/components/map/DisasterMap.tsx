@@ -23,6 +23,10 @@ import { ShelterRequirementPanel } from '@/components/planning/ShelterRequiremen
 import { buildShelterPlanningForZone, type ShelterPlanningResult } from '@/lib/planning/shelter';
 import { ResourceRequirementPanel } from '@/components/planning/ResourceRequirementPanel';
 import { buildResourcePlanningForZone, type ResourcePlanningResult } from '@/lib/planning/resources';
+import { ReportDetailPanel } from '@/components/reports/ReportDetailPanel';
+import { CitizenReportForm } from '@/components/reports/CitizenReportForm';
+import { createCitizenReport, type CitizenReportItem } from '@/lib/reports';
+import { demoCitizenReports } from '@/data/demo/citizenReports';
 import { mapLayerIds, getMapStyleForTheme } from '@/config/map';
 import { useTheme } from '@/context/ThemeContext';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
@@ -157,11 +161,15 @@ export function DisasterMap({ dataset, className, center, zoom }: DisasterMapPro
   const mapStyle = getMapStyleForTheme(theme);
   const [layers, setLayers]           = useState<LayerToggle[]>(INITIAL_LAYERS);
   const [activePanel, setActivePanel] = useState<HazardPanelState>(null);
+  const [activeReport, setActiveReport] = useState<CitizenReportItem | null>(null);
+  const [isReportFormOpen, setIsReportFormOpen] = useState(false);
   const [activeTab, setActiveTab]     = useState<ZoneDetailTab>('risk');
   const mapRef                        = useRef<MLMap | null>(null);
   const popupRef                      = useRef<import('maplibre-gl').Popup | null>(null);
   const prevLayers                    = useRef<LayerToggle[]>(INITIAL_LAYERS);
   const layersRef                     = useRef<LayerToggle[]>(INITIAL_LAYERS);
+  const clickHandlerRef               = useRef<((e: any) => void) | null>(null);
+  const mouseMoveHandlerRef           = useRef<((e: any) => void) | null>(null);
 
   useEffect(() => {
     layersRef.current = layers;
@@ -210,20 +218,55 @@ export function DisasterMap({ dataset, className, center, zoom }: DisasterMapPro
       });
     });
 
-    const riskClickable = [mapLayerIds.riskZoneFill, mapLayerIds.cycloneZoneFill];
-    const allClickableIds = [
-      ...riskClickable,
+    const candidateClickableIds = [
+      mapLayerIds.riskZoneFill,
+      mapLayerIds.cycloneZoneFill,
       ...NON_RISK_CLICKABLE.map((c) => c.layerId),
-    ].filter((id) => map.getLayer(id));
+    ];
 
-    allClickableIds.forEach((id) => {
-      map.on('mouseenter', id, () => { map.getCanvas().style.cursor = 'pointer'; });
-      map.on('mouseleave', id, () => { map.getCanvas().style.cursor = ''; });
-    });
+    if (clickHandlerRef.current) {
+      map.off('click', clickHandlerRef.current);
+    }
+    if (mouseMoveHandlerRef.current) {
+      map.off('mousemove', mouseMoveHandlerRef.current);
+    }
 
-    map.on('click', (e) => {
-      const features = map.queryRenderedFeatures(e.point, { layers: allClickableIds });
-      if (!features.length) { setActivePanel(null); return; }
+    const handleMouseMove = (e: import('maplibre-gl').MapMouseEvent) => {
+      const activeIds = candidateClickableIds.filter((id) => !!map.getLayer(id));
+      if (!activeIds.length) {
+        map.getCanvas().style.cursor = '';
+        return;
+      }
+      try {
+        const feats = map.queryRenderedFeatures(e.point, { layers: activeIds });
+        map.getCanvas().style.cursor = feats.length > 0 ? 'pointer' : '';
+      } catch {
+        map.getCanvas().style.cursor = '';
+      }
+    };
+
+    const handleClick = (e: import('maplibre-gl').MapMouseEvent) => {
+      const activeClickableIds = candidateClickableIds.filter((id) => !!map.getLayer(id));
+      if (!activeClickableIds.length) {
+        setActivePanel(null);
+        setActiveReport(null);
+        return;
+      }
+
+      let features: import('maplibre-gl').MapGeoJSONFeature[] = [];
+      try {
+        features = map.queryRenderedFeatures(e.point, { layers: activeClickableIds });
+      } catch {
+        setActivePanel(null);
+        setActiveReport(null);
+        return;
+      }
+
+      if (!features.length) {
+        setActivePanel(null);
+        setActiveReport(null);
+        return;
+      }
 
       const feature = features[0];
       const props   = (feature.properties ?? {}) as Record<string, unknown>;
@@ -232,6 +275,7 @@ export function DisasterMap({ dataset, className, center, zoom }: DisasterMapPro
       // ── Risk zone clicks (flood or cyclone fill layers) ──
       if (layerId === mapLayerIds.riskZoneFill || layerId === mapLayerIds.cycloneZoneFill) {
         popupRef.current?.remove();
+        setActiveReport(null);
         const zoneId = String(props.id ?? '');
         const zoneName = String(props.name ?? zoneId);
 
@@ -262,8 +306,21 @@ export function DisasterMap({ dataset, className, center, zoom }: DisasterMapPro
         return;
       }
 
+      // ── Citizen report clicked → open detail panel ──
+      if (layerId === mapLayerIds.citizenReports) {
+        popupRef.current?.remove();
+        setActivePanel(null);
+        const reportId = String(props.id ?? '');
+        const found = demoCitizenReports.find((r) => r.id === reportId);
+        if (found) {
+          setActiveReport(found);
+          return;
+        }
+      }
+
       // ── Other layers → popup ──
       setActivePanel(null);
+      setActiveReport(null);
       const entry = NON_RISK_CLICKABLE.find((c) => c.layerId === layerId);
       if (!entry) return;
 
@@ -276,13 +333,22 @@ export function DisasterMap({ dataset, className, center, zoom }: DisasterMapPro
       popupRef.current?.remove();
       popupRef.current = new Popup({ closeButton: true, closeOnClick: true, maxWidth: '320px', offset: 12 })
         .setLngLat(coords).setHTML(html).addTo(map);
-    });
+    };
+
+    clickHandlerRef.current = handleClick;
+    mouseMoveHandlerRef.current = handleMouseMove;
+
+    map.on('mousemove', handleMouseMove);
+    map.on('click', handleClick);
   }, [dataset]);
 
   const handleToggle     = useCallback((id: string) => {
     setLayers((prev) => prev.map((l) => l.id === id ? { ...l, enabled: !l.enabled } : l));
   }, []);
-  const handleClosePanel = useCallback(() => setActivePanel(null), []);
+  const handleClosePanel = useCallback(() => {
+    setActivePanel(null);
+    setActiveReport(null);
+  }, []);
 
   const activeAlerts  = dataset.alerts.filter((a) => a.isActive);
   const criticalCount = activeAlerts.filter((a) => a.severity === 'CRITICAL').length;
@@ -345,9 +411,18 @@ export function DisasterMap({ dataset, className, center, zoom }: DisasterMapPro
 
       {/* Map tools: Layer control + Theme switch */}
       <div className="absolute left-3 top-12 pointer-events-none z-10 flex flex-col gap-2">
-        <div className="flex items-center gap-2 pointer-events-auto">
+        <div className="flex items-center gap-2 pointer-events-auto flex-wrap">
           <LayerControl layers={layers} onToggle={handleToggle} className="mt-1" />
           <ThemeToggle size="sm" showLabel={true} className="mt-1 shadow-lg backdrop-blur-md map-panel font-medium" />
+          <button
+            type="button"
+            onClick={() => setIsReportFormOpen(true)}
+            className="mt-1 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-accent text-slate-950 hover:bg-accent/90 shadow-lg backdrop-blur-md transition-all active:scale-98"
+            title="Submit a ground disaster report"
+          >
+            <span>📢</span>
+            <span className="hidden sm:inline">Report Incident</span>
+          </button>
         </div>
       </div>
 
@@ -575,10 +650,42 @@ export function DisasterMap({ dataset, className, center, zoom }: DisasterMapPro
         </div>
       )}
 
+      {/* Citizen Report Detail Panel */}
+      {activeReport && (
+        <div className={cn(
+          'absolute z-20 pointer-events-auto',
+          'bottom-0 left-0 right-0',
+          'md:bottom-auto md:top-12 md:left-auto md:right-3 md:mt-1',
+          'overflow-y-auto max-h-[75dvh] md:max-h-[calc(100%-4rem)]',
+        )}>
+          <ReportDetailPanel
+            report={activeReport}
+            onClose={() => setActiveReport(null)}
+            onUpdateReport={(updated) => setActiveReport(updated)}
+          />
+        </div>
+      )}
+
+      {/* Citizen Report Form Modal */}
+      {isReportFormOpen && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 pointer-events-auto animate-fade-in">
+          <div className="w-full max-w-xl max-h-[90vh] overflow-y-auto">
+            <CitizenReportForm
+              onSubmitReport={(input) => {
+                const newReport = createCitizenReport(input, dataset);
+                setActiveReport(newReport);
+                setIsReportFormOpen(false);
+              }}
+              onCancel={() => setIsReportFormOpen(false)}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Legend */}
       <div className={cn(
         'absolute left-3 pointer-events-none z-10',
-        activePanel ? 'hidden md:block bottom-8' : 'bottom-8',
+        activePanel || activeReport ? 'hidden md:block bottom-8' : 'bottom-8',
       )}>
         <MapLegend />
       </div>

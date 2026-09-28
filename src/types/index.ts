@@ -75,9 +75,11 @@ export interface Alert {
 
 export type ReportStatus =
   | 'PENDING'
+  | 'UNDER_REVIEW'
   | 'COMMUNITY_CONFIRMED'
   | 'VERIFIED'
-  | 'REJECTED';
+  | 'REJECTED'
+  | 'ESCALATED';
 
 export interface CitizenReport {
   id: string;

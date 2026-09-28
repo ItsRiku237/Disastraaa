@@ -90,7 +90,10 @@ export function reportStatusColorExpr(): ExpressionSpecification {
     ['get', 'status'],
     'VERIFIED',             '#10B981',
     'COMMUNITY_CONFIRMED',  '#F59E0B',
+    'UNDER_REVIEW',        '#38BDF8',
+    'ESCALATED',           '#EF4444',
+    'REJECTED',            '#64748B',
     'PENDING',              '#94A3B8',
-    '#64748B',
+    '#94A3B8',
   ];
 }

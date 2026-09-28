@@ -296,6 +296,7 @@ export function citizenReportsToGeoJSON(
         confirmCount: r.confirmCount,
         createdAt: r.createdAt,
         status: r.status,
+        severity: r.severity ?? 'MODERATE',
       },
     })),
   };
