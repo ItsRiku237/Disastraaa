@@ -15,6 +15,7 @@ import {
   Clock,
   Truck,
   Settings,
+  BarChart2,
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
@@ -27,6 +28,7 @@ import { ThemeToggle } from '@/components/theme/ThemeToggle';
 // Icon registry — avoids dynamic require; extend when adding nav items
 const iconMap: Record<string, React.ElementType> = {
   LayoutDashboard,
+  BarChart2,
   Map,
   Bell,
   FileText,
