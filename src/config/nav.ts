@@ -36,6 +36,7 @@ export const dashboardNavGroups: NavGroup[] = [
     label: 'Overview',
     items: [
       { label: 'Command Center', href: '/dashboard', icon: 'LayoutDashboard' },
+      { label: 'Response Operations', href: '/operations', icon: 'Truck' },
       { label: 'Live Map',  href: '/map',         icon: 'Map' },
       { label: 'Alerts',    href: '/alerts',      icon: 'Bell' },
     ],
@@ -54,7 +55,6 @@ export const dashboardNavGroups: NavGroup[] = [
       { label: 'Risk Analysis',     href: '/state',       icon: 'Activity' },
       { label: 'Historical',        href: '/historical',  icon: 'Clock' },
       { label: 'Planning',          href: '/planning',    icon: 'Calendar' },
-      { label: 'Operations',        href: '/operations',  icon: 'Truck' },
     ],
   },
   {
