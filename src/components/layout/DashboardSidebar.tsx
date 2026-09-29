@@ -16,6 +16,7 @@ import {
   Truck,
   Settings,
   BarChart2,
+  Sliders,
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
@@ -29,6 +30,7 @@ import { ThemeToggle } from '@/components/theme/ThemeToggle';
 const iconMap: Record<string, React.ElementType> = {
   LayoutDashboard,
   BarChart2,
+  Sliders,
   Map,
   Bell,
   FileText,

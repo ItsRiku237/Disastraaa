@@ -100,7 +100,7 @@ export function SituationAnalyticsDashboard({
   // Authority gate check
   if (!isAuthorizedForOperations(role)) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-surface-bg p-4 sm:p-6 lg:p-8">
+      <div className="p-4 sm:p-6 space-y-6 animate-fade-in max-w-[1600px] mx-auto">
         <AuthorityAccessGate
           currentRole={role}
           onClearanceGranted={(newRole: Role) => setRole(newRole)}
@@ -110,7 +110,7 @@ export function SituationAnalyticsDashboard({
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-surface-bg p-4 sm:p-6 lg:p-8 space-y-6">
+    <div className="p-4 sm:p-6 space-y-6 animate-fade-in max-w-[1600px] mx-auto">
       {/* 1. Header */}
       <SituationAnalyticsHeader
         role={role}

@@ -24,6 +24,7 @@ const config: Config = {
         // ── Background surface hierarchy (adaptive Light & Dark mode) ──
         surface: {
           base:     'rgb(var(--surface-base-rgb, 8 12 24) / <alpha-value>)',
+          bg:       'rgb(var(--surface-base-rgb, 8 12 24) / <alpha-value>)',
           card:     'rgb(var(--surface-card-rgb, 14 20 34) / <alpha-value>)',
           elevated: 'rgb(var(--surface-elevated-rgb, 20 27 45) / <alpha-value>)',
           overlay:  'rgb(var(--surface-overlay-rgb, 26 34 54) / <alpha-value>)',
