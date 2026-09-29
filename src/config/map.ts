@@ -99,6 +99,10 @@ export const mapLayerIds = {
   destSafetyRadiusFill:    'dest-safety-radius-fill',
   destSafetyRadiusOutline: 'dest-safety-radius-outline',
   destSafetyMarker:        'dest-safety-marker',
+
+  // Journey Intelligence (Task 15)
+  journeyCorridorPoints:   'journey-corridor-points',
+  journeyCorridorBuffer:   'journey-corridor-buffer',
 } as const;
 
 export type MapLayerId = (typeof mapLayerIds)[keyof typeof mapLayerIds];

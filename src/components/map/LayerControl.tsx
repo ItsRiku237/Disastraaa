@@ -40,8 +40,8 @@ export function LayerControl({ layers, onToggle, className }: LayerControlProps)
         className={cn(
           'inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold shadow-lg backdrop-blur-md transition-all active:scale-98 border',
           open
-            ? 'bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-100 border-slate-300 dark:border-white/20'
-            : 'bg-white/95 dark:bg-slate-900/90 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 border-slate-200 dark:border-white/15'
+            ? 'bg-slate-200 dark:bg-surface-elevated text-slate-900 dark:text-slate-100 border-slate-300 dark:border-white/20'
+            : 'bg-white/95 dark:bg-surface-elevated/90 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-surface-overlay border-slate-200 dark:border-white/10'
         )}
       >
         <Layers className="w-3.5 h-3.5 text-accent" />
@@ -60,8 +60,8 @@ export function LayerControl({ layers, onToggle, className }: LayerControlProps)
           className={cn(
             'absolute top-full left-0 mt-1.5 w-60 z-30',
             'rounded-xl shadow-2xl p-3',
-            'bg-white/98 dark:bg-slate-900/95 backdrop-blur-xl',
-            'border border-slate-200 dark:border-white/20 ring-1 ring-black/5 dark:ring-white/10',
+            'bg-white/98 dark:bg-surface-card/95 backdrop-blur-xl',
+            'border border-slate-200 dark:border-white/10 ring-1 ring-black/5 dark:ring-white/5',
             'animate-slide-up'
           )}
         >

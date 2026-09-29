@@ -133,8 +133,8 @@ export function PublicReportList() {
         <div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
             <span>Ground Intelligence & Citizen Reports</span>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-accent/15 text-cyan-800 dark:text-accent font-semibold">
-              TASK 10
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-accent/15 text-cyan-800 dark:text-accent font-semibold tracking-wider uppercase">
+              Field Telemetry
             </span>
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-2xl">

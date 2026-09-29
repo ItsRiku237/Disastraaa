@@ -79,7 +79,7 @@ export default function TravelPage() {
 
   return (
     <>
-      <main className="pt-20 min-h-screen bg-slate-50 dark:bg-surface-canvas text-slate-900 dark:text-slate-100 font-sans pb-16">
+      <main className="pt-20 min-h-screen bg-slate-50 dark:bg-surface-base text-slate-900 dark:text-slate-100 font-sans pb-16 transition-colors">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
 
           {/* Header & Breadcrumb */}
@@ -87,22 +87,22 @@ export default function TravelPage() {
             <div>
               <div className="flex items-center gap-2 text-xs font-semibold text-accent uppercase tracking-wider mb-1">
                 <Navigation className="w-3.5 h-3.5" />
-                <span>Road Intelligence, Routes &amp; Destination Safety</span>
+                <span>Road Intelligence, Safe Transit &amp; Journey Risk</span>
                 <span className="text-slate-400 dark:text-slate-600">•</span>
-                <span className="text-slate-500 dark:text-slate-400">Task 12, 13 &amp; 14 Prototype</span>
+                <span className="text-slate-500 dark:text-slate-400">Operational Transit Network</span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">
-                Disaster Roadway Intelligence &amp; Safe Travel Planning
+                Disaster Roadway Intelligence &amp; Safe Journey Planning
               </h1>
-              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-3xl">
-                Real-time roadway conditions, date/time travel risk intelligence, destination safety checks, and alternative safe transit routing under disaster scenarios.
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 mt-1 max-w-3xl leading-relaxed">
+                Real-time roadway conditions, multi-hazard corridor exposure, destination safety checks, and alternative safe transit routing under disaster conditions.
               </p>
             </div>
 
             <div className="flex items-center gap-3">
               <Link
                 href="/map"
-                className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-xl bg-accent text-white hover:bg-accent/90 shadow-sm transition-all"
+                className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-xl bg-accent text-slate-950 font-bold hover:bg-accent/90 shadow-sm transition-all"
               >
                 <MapIcon className="w-4 h-4" />
                 <span>View on GIS Map</span>
@@ -110,19 +110,21 @@ export default function TravelPage() {
             </div>
           </div>
 
-          {/* Task 13 & 14 — Destination Safety & Route Planning section */}
-          <div className="bg-white/95 dark:bg-slate-900/90 rounded-2xl border border-slate-200 dark:border-white/20 shadow-xl backdrop-blur-xl overflow-hidden ring-1 ring-black/5 dark:ring-white/10">
-            <div className="px-6 py-4.5 border-b border-slate-200 dark:border-white/15 bg-slate-50/90 dark:bg-slate-800/80 flex items-center justify-between">
+          {/* Journey Risk, Destination Safety & Route Planning section */}
+          <div className="bg-white dark:bg-surface-card rounded-2xl border border-slate-200 dark:border-white/10 shadow-2xl backdrop-blur-xl overflow-hidden ring-1 ring-black/5 dark:ring-white/5">
+            <div className="px-6 py-4.5 border-b border-slate-200 dark:border-white/10 bg-slate-50/80 dark:bg-surface-elevated/80 flex items-center justify-between">
               <div>
-                <div className="text-[10px] font-bold uppercase tracking-widest text-accent mb-0.5">Task 13 + 14 · Decision Support</div>
+                <div className="text-[10px] font-bold uppercase tracking-widest text-accent mb-0.5">
+                  OPERATIONAL DECISION SUPPORT · NATIONAL TRANSIT MONITOR
+                </div>
                 <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                  <span>🗺️ Destination Safety &amp; Routes</span>
+                  <span>🗺️ Safe Corridor Planning &amp; Journey Risk Intelligence</span>
                   <span className="text-xs font-mono font-normal text-slate-500 dark:text-slate-400">
-                    · Travel Risk Intelligence
+                    · Multi-Factor Assessment
                   </span>
                 </h2>
                 <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5">
-                  Select destination and time horizon to inspect localized safety factors, active warnings, and calculate combined route transit risk.
+                  Analyze origin-to-destination transit corridors, hazard exposures, road conditions, active alerts, and time-aware scenarios.
                 </p>
               </div>
             </div>
@@ -132,17 +134,17 @@ export default function TravelPage() {
           </div>
 
           {/* Notice banner */}
-          <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-start gap-3 text-xs text-amber-800 dark:text-amber-200">
+          <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-start gap-3 text-xs text-amber-800 dark:text-amber-200 backdrop-blur-sm">
             <Info className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
             <div className="space-y-1">
               <div className="font-bold flex items-center gap-2">
-                <span>Public Travel Advisory & Prototype Notice</span>
-                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-700 dark:text-amber-300 font-bold uppercase">
+                <span>Public Travel Advisory &amp; Operations Notice</span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/20 text-amber-700 dark:text-amber-300 font-bold uppercase tracking-wider">
                   Advisory Only
                 </span>
               </div>
-              <p className="text-slate-600 dark:text-slate-300 leading-relaxed text-[11px]">
-                Road conditions change rapidly during cyclone and flood events. This directory provides system intelligence and citizen-submitted ground reports. Do not attempt to cross flooded roadways or pass official police barricades. Algorithmic routing engines (OSRM / GraphHopper safe-path calculations) connect in the upcoming routing phase.
+              <p className="text-slate-700 dark:text-slate-300 leading-relaxed text-[11px]">
+                Road conditions and inundation levels change rapidly during cyclone and monsoon events. Real-time road status is compiled from regional control centers, sensor stations, and verified ground reports. Do not attempt to cross flooded roadways, ford submerged causeways, or bypass official civil barricades.
               </p>
             </div>
           </div>

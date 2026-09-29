@@ -59,7 +59,7 @@ export function DestinationTimeline({
   return (
     <div
       className={cn(
-        'rounded-2xl border border-slate-200 dark:border-white/20 bg-white/95 dark:bg-slate-900/90 p-4 space-y-3.5 backdrop-blur-xl shadow-sm ring-1 ring-black/5 dark:ring-white/10',
+        'rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-surface-card p-4 space-y-3.5 backdrop-blur-xl shadow-sm ring-1 ring-black/5 dark:ring-white/5',
         className
       )}
     >
@@ -69,7 +69,7 @@ export function DestinationTimeline({
           <span>Destination Safety Timeline</span>
         </div>
         <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400">
-          Scrollable Scenario Progression (9 Slots)
+          Temporal Progression (9 Horizons)
         </span>
       </div>
 
@@ -87,7 +87,7 @@ export function DestinationTimeline({
                 'min-w-[145px] max-w-[170px] flex-shrink-0 p-3.5 rounded-xl border text-left transition-all flex flex-col justify-between group cursor-pointer backdrop-blur-md',
                 isSelected
                   ? 'ring-2 ring-accent border-accent bg-accent/15 dark:bg-accent/25 shadow-md scale-[1.02]'
-                  : 'border-slate-200 dark:border-white/20 bg-white dark:bg-slate-800/90 hover:bg-slate-50 dark:hover:bg-slate-700/80 shadow-xs'
+                  : 'border-slate-200 dark:border-white/10 bg-white dark:bg-surface-elevated/70 hover:bg-slate-50 dark:hover:bg-surface-elevated shadow-xs'
               )}
             >
               <div>
@@ -120,7 +120,7 @@ export function DestinationTimeline({
 
               {/* Mini progress bar */}
               <div className="mt-3 pt-2 border-t border-slate-100 dark:border-white/10">
-                <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-700/80 rounded-full overflow-hidden">
+                <div className="h-1.5 w-full bg-slate-200 dark:bg-surface-overlay rounded-full overflow-hidden">
                   <div
                     className={cn('h-full rounded-full transition-all', style.bar)}
                     style={{ width: `${item.score}%` }}

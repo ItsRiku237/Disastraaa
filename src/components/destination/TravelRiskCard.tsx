@@ -62,12 +62,12 @@ export function TravelRiskCard({
   return (
     <div
       className={cn(
-        'rounded-2xl border border-slate-200 dark:border-white/20 bg-white/95 dark:bg-slate-900/90 overflow-hidden shadow-xl backdrop-blur-xl ring-1 ring-black/5 dark:ring-white/10',
+        'rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-surface-card overflow-hidden shadow-xl backdrop-blur-xl ring-1 ring-black/5 dark:ring-white/5',
         className
       )}
     >
       {/* Header bar */}
-      <div className="px-5 py-4 border-b border-slate-200 dark:border-white/15 bg-slate-50/90 dark:bg-slate-800/80 flex items-center justify-between flex-wrap gap-2">
+      <div className="px-5 py-4 border-b border-slate-200 dark:border-white/10 bg-slate-50/90 dark:bg-surface-elevated/80 flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-xl bg-accent/15 border border-accent/30 flex items-center justify-center text-accent">
             <Compass className="w-4 h-4" />
@@ -77,8 +77,8 @@ export function TravelRiskCard({
               <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 Combined Transit &amp; Destination Intelligence
               </span>
-              <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-accent/15 text-accent border border-accent/25">
-                Task 13 + 14
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-accent/15 text-accent border border-accent/25 uppercase tracking-wider">
+                Transit Model
               </span>
             </div>
             <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
@@ -104,7 +104,7 @@ export function TravelRiskCard({
         {/* Risk Triplet: Route Risk + Destination Risk -> Overall Travel Risk */}
         <div className="grid grid-cols-1 gap-2.5 items-stretch">
           {/* Route Risk */}
-          <div className="p-4 rounded-xl border border-slate-200 dark:border-white/20 bg-slate-50/90 dark:bg-slate-800/90 shadow-sm backdrop-blur-md">
+          <div className="p-4 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/90 dark:bg-surface-elevated/70 shadow-sm backdrop-blur-md">
             <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1 flex items-center justify-between">
               <span>Route Corridor Risk</span>
               <span className="text-[10px] font-mono text-accent">55% Weight</span>
@@ -123,7 +123,7 @@ export function TravelRiskCard({
           </div>
 
           {/* Destination Risk */}
-          <div className="p-4 rounded-xl border border-slate-200 dark:border-white/20 bg-slate-50/90 dark:bg-slate-800/90 shadow-sm backdrop-blur-md">
+          <div className="p-4 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/90 dark:bg-surface-elevated/70 shadow-sm backdrop-blur-md">
             <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1 flex items-center justify-between">
               <span>Destination Risk</span>
               <span className="text-[10px] font-mono text-accent">45% Weight</span>
@@ -166,7 +166,7 @@ export function TravelRiskCard({
         </div>
 
         {/* Explainable Formula Notice */}
-        <div className="p-3.5 rounded-xl bg-slate-100/90 dark:bg-slate-800/80 border border-slate-200 dark:border-white/15 text-xs space-y-1 backdrop-blur-md">
+        <div className="p-3.5 rounded-xl bg-slate-100/90 dark:bg-surface-elevated/70 border border-slate-200 dark:border-white/10 text-xs space-y-1 backdrop-blur-md">
           <div className="flex items-center gap-1.5 font-bold text-slate-800 dark:text-slate-200">
             <Info className="w-3.5 h-3.5 text-accent flex-shrink-0" />
             <span>Calculation Transparency</span>
@@ -179,16 +179,16 @@ export function TravelRiskCard({
           </p>
         </div>
 
-        {/* Factual Route Comparison Table (Section 9) */}
+        {/* Factual Route Comparison Table */}
         {travelRisk.routeComparison && (
           <div className="space-y-2.5 pt-2">
             <div className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">
               Route Options Comparison (Factual Metrics)
             </div>
-            <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-white/20">
+            <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-white/10">
               <table className="w-full text-xs text-left border-collapse">
                 <thead>
-                  <tr className="bg-slate-100 dark:bg-slate-800/90 border-b border-slate-200 dark:border-white/20 text-slate-600 dark:text-slate-300 text-[10px] font-bold uppercase tracking-wider">
+                  <tr className="bg-slate-100 dark:bg-surface-elevated border-b border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 text-[10px] font-bold uppercase tracking-wider">
                     <th className="py-2.5 px-3">Route Option</th>
                     <th className="py-2.5 px-3">Distance</th>
                     <th className="py-2.5 px-3">Travel Time</th>
@@ -215,7 +215,7 @@ export function TravelRiskCard({
                           'cursor-pointer transition-colors',
                           isSelected
                             ? 'bg-accent/15 dark:bg-accent/25 font-semibold text-slate-900 dark:text-slate-100'
-                            : 'hover:bg-slate-50 dark:hover:bg-slate-800/60 text-slate-800 dark:text-slate-200'
+                            : 'hover:bg-slate-50 dark:hover:bg-surface-elevated/60 text-slate-800 dark:text-slate-200'
                         )}
                       >
                         <td className="py-2.5 px-3 flex items-center gap-1.5 font-bold">

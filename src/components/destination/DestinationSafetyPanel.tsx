@@ -143,18 +143,18 @@ export function DestinationSafetyPanel({
   return (
     <div
       className={cn(
-        'rounded-2xl border border-slate-200 dark:border-white/20 bg-white/95 dark:bg-slate-900/90 shadow-xl backdrop-blur-xl overflow-hidden space-y-6 ring-1 ring-black/5 dark:ring-white/10',
+        'rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-surface-card shadow-xl backdrop-blur-xl overflow-hidden space-y-6 ring-1 ring-black/5 dark:ring-white/5',
         className
       )}
     >
-      {/* ── Top Header & Prototype Notice ─────────────────────────── */}
-      <div className="px-5 py-4 border-b border-slate-200 dark:border-white/15 bg-slate-50/90 dark:bg-slate-800/80 flex flex-wrap items-center justify-between gap-3">
+      {/* ── Top Header & Professional Notice ─────────────────────────── */}
+      <div className="px-5 py-4 border-b border-slate-200 dark:border-white/10 bg-slate-50/90 dark:bg-surface-elevated/80 flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2 text-[10px] font-bold text-accent uppercase tracking-widest mb-0.5">
             <Shield className="w-3.5 h-3.5" />
             <span>Destination Safety Intelligence</span>
             <span className="text-slate-400 dark:text-slate-600">•</span>
-            <span className="text-slate-500 dark:text-slate-400">Task 14 Prototype</span>
+            <span className="text-slate-500 dark:text-slate-400">Operational Assessment Model</span>
           </div>
           <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-2">
             <span>{safetyResult.destinationName}</span>
@@ -164,10 +164,10 @@ export function DestinationSafetyPanel({
           </h2>
         </div>
 
-        {/* Prototype Disclaimer Badge */}
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/25">
+        {/* Operational Advisory Badge */}
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-semibold bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-500/25">
           <Sparkles className="w-3 h-3 text-amber-500" />
-          <span>Decision Support · Prototype Scenario Data</span>
+          <span>Decision Support · Sector Status Assessment</span>
         </div>
       </div>
 
@@ -194,7 +194,7 @@ export function DestinationSafetyPanel({
             <div
               className={cn(
                 'w-16 h-16 sm:w-18 sm:h-18 rounded-2xl flex flex-col items-center justify-center border-2 shadow-md flex-shrink-0',
-                'bg-white dark:bg-slate-900 border-slate-200 dark:border-white/25'
+                'bg-white dark:bg-surface-elevated border-slate-200 dark:border-white/15'
               )}
             >
               <span className={cn('text-2xl sm:text-3xl font-black tracking-tight leading-none', status.text)}>
@@ -226,7 +226,7 @@ export function DestinationSafetyPanel({
 
           {/* Time Delta Comparison if user selected future/modified time */}
           {safetyResult.deltaFromCurrent && (
-            <div className="w-full p-3.5 rounded-xl bg-white/95 dark:bg-slate-900/95 border border-slate-200 dark:border-white/25 shadow-md backdrop-blur-md">
+            <div className="w-full p-3.5 rounded-xl bg-white/95 dark:bg-surface-elevated/90 border border-slate-200 dark:border-white/10 shadow-md backdrop-blur-md">
               <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1 flex items-center gap-1">
                 <Clock className="w-3 h-3 text-accent" />
                 <span>Time-Aware Risk Shift</span>
@@ -286,7 +286,7 @@ export function DestinationSafetyPanel({
               return (
                 <div
                   key={factor.id}
-                  className="p-3.5 rounded-xl border border-slate-200 dark:border-white/20 bg-white/95 dark:bg-slate-800/90 backdrop-blur-md shadow-sm hover:border-accent/50 transition-all flex flex-col justify-between space-y-2.5"
+                  className="p-3.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-surface-elevated/70 backdrop-blur-md shadow-sm hover:border-accent/50 transition-all flex flex-col justify-between space-y-2.5"
                 >
                   <div>
                     <div className="flex items-center justify-between text-xs">
@@ -319,7 +319,7 @@ export function DestinationSafetyPanel({
 
                   {/* Progress bar */}
                   <div>
-                    <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-700/80 rounded-full overflow-hidden">
+                    <div className="h-1.5 w-full bg-slate-200 dark:bg-surface-overlay rounded-full overflow-hidden">
                       <div
                         className={cn('h-full rounded-full transition-all', fStatus.text.replace('text-', 'bg-'))}
                         style={{ width: `${factor.score}%` }}
@@ -336,7 +336,7 @@ export function DestinationSafetyPanel({
         </div>
 
         {/* ── Section 5: Why This Score? (3–5 concise bullets) ──────── */}
-        <div className="p-4 rounded-xl border border-slate-200 dark:border-cyan-500/25 bg-slate-50/90 dark:bg-slate-800/80 backdrop-blur-md space-y-2.5 shadow-sm">
+        <div className="p-4 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/90 dark:bg-surface-elevated/70 backdrop-blur-md space-y-2.5 shadow-sm">
           <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
             <FileText className="w-3.5 h-3.5 text-accent" />
             <span>Why This Score? (Explainable Reasoning)</span>
@@ -425,7 +425,7 @@ export function DestinationSafetyPanel({
         {/* ── Supporting Data Metrics Row ──────────────────────────── */}
         <div className="grid grid-cols-2 gap-2.5 pt-1">
           {/* Rainfall */}
-          <div className="p-3.5 rounded-xl border border-slate-200 dark:border-white/20 bg-white/95 dark:bg-slate-800/90 backdrop-blur-md shadow-sm">
+          <div className="p-3.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-surface-elevated/70 backdrop-blur-md shadow-sm">
             <div className="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 flex items-center gap-1">
               <Waves className="w-3.5 h-3.5 text-blue-500" />
               <span>Rainfall Rate</span>
@@ -437,7 +437,7 @@ export function DestinationSafetyPanel({
           </div>
 
           {/* Wind */}
-          <div className="p-3.5 rounded-xl border border-slate-200 dark:border-white/20 bg-white/95 dark:bg-slate-800/90 backdrop-blur-md shadow-sm">
+          <div className="p-3.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-surface-elevated/70 backdrop-blur-md shadow-sm">
             <div className="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 flex items-center gap-1">
               <Wind className="w-3.5 h-3.5 text-cyan-500" />
               <span>Sustained Wind</span>
@@ -449,7 +449,7 @@ export function DestinationSafetyPanel({
           </div>
 
           {/* River Stage */}
-          <div className="p-3.5 rounded-xl border border-slate-200 dark:border-white/20 bg-white/95 dark:bg-slate-800/90 backdrop-blur-md shadow-sm">
+          <div className="p-3.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-surface-elevated/70 backdrop-blur-md shadow-sm">
             <div className="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 flex items-center gap-1">
               <Compass className="w-3.5 h-3.5 text-amber-500" />
               <span>River Stage</span>
@@ -463,7 +463,7 @@ export function DestinationSafetyPanel({
           </div>
 
           {/* Nearest Shelter */}
-          <div className="p-3.5 rounded-xl border border-slate-200 dark:border-white/20 bg-white/95 dark:bg-slate-800/90 backdrop-blur-md shadow-sm">
+          <div className="p-3.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-surface-elevated/70 backdrop-blur-md shadow-sm">
             <div className="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 flex items-center gap-1">
               <Home className="w-3.5 h-3.5 text-emerald-500" />
               <span>Nearest Shelter</span>
@@ -483,10 +483,10 @@ export function DestinationSafetyPanel({
 
       </div>
 
-      {/* Footer Prototype Notice */}
-      <div className="px-5 py-3 border-t border-slate-200 dark:border-white/15 bg-slate-50/90 dark:bg-slate-800/70 text-[10px] text-slate-500 dark:text-slate-400 flex items-center justify-between">
-        <span>⚠️ Prototype Decision Support — Does not guarantee absolute safety. Follow official state disaster directives.</span>
-        <span className="font-mono">Engine: Task 14 · v1.0</span>
+      {/* Footer Notice */}
+      <div className="px-5 py-3 border-t border-slate-200 dark:border-white/10 bg-slate-50/90 dark:bg-surface-elevated/80 text-[10px] text-slate-500 dark:text-slate-400 flex items-center justify-between">
+        <span>⚠️ Operational Decision Support — Provides predictive sector stability estimates. Follow official state disaster directives.</span>
+        <span className="font-mono">Engine: Destination Safety · v1.0</span>
       </div>
     </div>
   );

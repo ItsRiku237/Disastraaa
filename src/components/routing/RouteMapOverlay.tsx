@@ -23,6 +23,7 @@ interface RouteMapOverlayProps {
   onRouteClear: () => void;
   onDestinationSelected?: (coords: LngLat, safetyScore: number, status: DestinationSafetyStatus) => void;
   onDestinationClear?: () => void;
+  onCorridorHighlighted?: (points: Array<{ coordinates: [number, number]; risk: string; name: string }>) => void;
   className?: string;
 }
 
@@ -31,6 +32,7 @@ export function RouteMapOverlay({
   onRouteClear,
   onDestinationSelected,
   onDestinationClear,
+  onCorridorHighlighted,
   className,
 }: RouteMapOverlayProps) {
   const [open, setOpen] = useState(false);
@@ -38,7 +40,8 @@ export function RouteMapOverlay({
   const handleRouteClear = useCallback(() => {
     onRouteClear();
     onDestinationClear?.();
-  }, [onRouteClear, onDestinationClear]);
+    onCorridorHighlighted?.([]);
+  }, [onRouteClear, onDestinationClear, onCorridorHighlighted]);
 
   return (
     <>
@@ -50,7 +53,7 @@ export function RouteMapOverlay({
           'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold shadow-lg backdrop-blur-md transition-all active:scale-98 border',
           open
             ? 'bg-accent text-slate-950 hover:bg-accent/90 border-accent/50'
-            : 'bg-white/95 dark:bg-slate-900/90 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 border-slate-200 dark:border-white/15',
+            : 'bg-white/95 dark:bg-surface-elevated/90 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-surface-overlay border-slate-200 dark:border-white/10',
           className
         )}
         title="Travel & Safe Route Planner"
@@ -72,19 +75,19 @@ export function RouteMapOverlay({
             'max-h-[calc(100vh-6.25rem)]',
             'flex flex-col overflow-hidden',
             'rounded-2xl',
-            'bg-white/98 dark:bg-slate-900/95 border border-slate-200/90 dark:border-white/20 shadow-2xl backdrop-blur-2xl ring-1 ring-black/10 dark:ring-white/10'
+            'bg-white/98 dark:bg-surface-card/98 border border-slate-200/90 dark:border-white/10 shadow-2xl backdrop-blur-2xl ring-1 ring-black/10 dark:ring-white/5'
           )}
           role="dialog"
           aria-label="Travel Safety & Route Planner"
         >
           {/* Panel header */}
-          <div className="sticky top-0 z-20 flex items-center justify-between px-4.5 py-3 border-b border-slate-200 dark:border-white/15 bg-slate-100/95 dark:bg-slate-800/95 rounded-t-2xl backdrop-blur-xl flex-shrink-0">
+          <div className="sticky top-0 z-20 flex items-center justify-between px-4.5 py-3 border-b border-slate-200 dark:border-white/10 bg-slate-100/95 dark:bg-surface-elevated/95 rounded-t-2xl backdrop-blur-xl flex-shrink-0">
             <div>
               <div className="text-[10px] font-bold uppercase tracking-widest text-accent">
-                Task 13 + 14 · Decision Support
+                EMERGENCY TRANSIT PLANNING &amp; CORRIDOR RISK
               </div>
               <div className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
-                <span>🗺️ Destination Safety &amp; Routes</span>
+                <span>🗺️ Safe Routes &amp; Journey Risk</span>
               </div>
             </div>
             <button
@@ -105,6 +108,7 @@ export function RouteMapOverlay({
               onRouteSelected={onRouteSelected}
               onRouteClear={handleRouteClear}
               onDestinationSelected={onDestinationSelected}
+              onCorridorHighlighted={onCorridorHighlighted}
             />
           </div>
         </div>

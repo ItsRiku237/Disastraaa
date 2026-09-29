@@ -644,3 +644,61 @@ export function removeDestinationSafetyLayers(map: MLMap): void {
   }
 }
 
+/**
+ * Add or update Journey Corridor hazard highlight layers (Task 15)
+ */
+export function addOrUpdateJourneyCorridorLayers(
+  map: MLMap,
+  corridorPoints: Array<{ coordinates: [number, number]; risk: string; name: string }>,
+): void {
+  const features = corridorPoints.map((pt, i) => ({
+    type: 'Feature' as const,
+    id: `journey-corridor-pt-${i}`,
+    geometry: { type: 'Point' as const, coordinates: pt.coordinates },
+    properties: {
+      name: pt.name,
+      risk: pt.risk,
+      color:
+        pt.risk === 'CRITICAL'
+          ? '#EF4444'
+          : pt.risk === 'HIGH'
+          ? '#F97316'
+          : pt.risk === 'MODERATE'
+          ? '#F59E0B'
+          : '#10B981',
+    },
+  }));
+
+  const data = {
+    type: 'FeatureCollection' as const,
+    features,
+  };
+
+  addOrUpdateSource(map, 'journey-corridor', data as any);
+
+  if (!hasLayer(map, mapLayerIds.journeyCorridorPoints)) {
+    map.addLayer({
+      id: mapLayerIds.journeyCorridorPoints,
+      type: 'circle',
+      source: 'journey-corridor',
+      paint: {
+        'circle-color': ['get', 'color'] as any,
+        'circle-radius': 7.5,
+        'circle-stroke-width': 2,
+        'circle-stroke-color': '#0E1422',
+        'circle-opacity': 0.9,
+      },
+    });
+  }
+}
+
+/** Remove journey corridor layers cleanly */
+export function removeJourneyCorridorLayers(map: MLMap): void {
+  if (hasLayer(map, mapLayerIds.journeyCorridorPoints)) {
+    map.removeLayer(mapLayerIds.journeyCorridorPoints);
+  }
+  if (hasSource(map, 'journey-corridor')) {
+    map.removeSource('journey-corridor');
+  }
+}
+

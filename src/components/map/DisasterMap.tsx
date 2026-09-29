@@ -66,6 +66,8 @@ import {
   addCycloneZoneLayers,
   addCycloneTrackLayers,
   addHistoricalEventLayers,
+  addOrUpdateJourneyCorridorLayers,
+  removeJourneyCorridorLayers,
 } from './layers/addLayers';
 import {
   floodAreaPopupHTML,
@@ -460,8 +462,19 @@ export function DisasterMap({ dataset, className, center, zoom }: DisasterMapPro
     if (map) {
       removeRouteLayers(map);
       removeDestinationSafetyLayers(map);
+      removeJourneyCorridorLayers(map);
     }
     setActiveRouteMode(null);
+  }, []);
+
+  const handleCorridorHighlighted = useCallback((points: Array<{ coordinates: [number, number]; risk: string; name: string }>) => {
+    const map = mapRef.current;
+    if (!map) return;
+    if (points.length === 0) {
+      removeJourneyCorridorLayers(map);
+    } else {
+      addOrUpdateJourneyCorridorLayers(map, points);
+    }
   }, []);
 
   const handleToggle     = useCallback((id: string) => {
@@ -548,13 +561,14 @@ export function DisasterMap({ dataset, className, center, zoom }: DisasterMapPro
           <span>Report Incident</span>
         </button>
 
-        {/* Task 13 + 14: Route & Destination Planner toggle */}
+        {/* Task 13 + 14 + 15: Route, Destination & Journey Intelligence */}
         <div className="pointer-events-auto">
           <RouteMapOverlay
             onRouteSelected={handleRouteSelected}
             onRouteClear={handleRouteClear}
             onDestinationSelected={handleDestinationSelected}
             onDestinationClear={handleDestinationClear}
+            onCorridorHighlighted={handleCorridorHighlighted}
           />
         </div>
       </div>

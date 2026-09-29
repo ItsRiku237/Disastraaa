@@ -41,6 +41,8 @@ import type {
 import { TimeScenarioPicker } from '@/components/destination/TimeScenarioPicker';
 import { TravelRiskCard } from '@/components/destination/TravelRiskCard';
 import { DestinationSafetyPanel } from '@/components/destination/DestinationSafetyPanel';
+import { calculateJourneyRisk, type JourneyRiskResult } from '@/lib/risk/journey';
+import { JourneyRiskPanel } from '@/components/journey';
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -125,7 +127,7 @@ function RouteCard({
     return (
       <div className={cn(
         'rounded-xl border p-4',
-        'border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-slate-900/60',
+        'border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-surface-elevated/40',
         'opacity-60',
       )}>
         <div className="flex items-center gap-2 mb-2">
@@ -157,7 +159,7 @@ function RouteCard({
         'w-full text-left rounded-xl border p-4 transition-all shadow-xs',
         isSelected
           ? cn('ring-2 ring-accent/60 shadow-sm border-accent', cfg.accent)
-          : 'border-slate-200 dark:border-white/15 bg-white dark:bg-slate-900/80 hover:bg-slate-50 dark:hover:bg-slate-800/80',
+          : 'border-slate-200 dark:border-white/10 bg-white dark:bg-surface-card hover:bg-slate-50 dark:hover:bg-surface-elevated',
       )}
     >
       {/* Header row */}
@@ -185,7 +187,7 @@ function RouteCard({
       {/* Metrics row */}
       <div className="grid grid-cols-3 gap-3 mb-3">
         <RouteMetric label="Distance" value={`${result.totalDistanceKm} km`} />
-        <RouteMetric label="Estimated" value={timeStr} sub="prototype" />
+        <RouteMetric label="Estimated" value={timeStr} sub="weather-adj." />
         <RouteMetric label="Route Risk" value={`${result.riskScore}/100`} />
       </div>
 
@@ -212,17 +214,17 @@ function RouteCard({
 function RouteDetailPanel({ result }: { result: RouteResult }) {
   if (!result.found) {
     return (
-      <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900/60 p-6 text-center">
-        <p className="text-sm text-slate-500">{result.notFoundReason}</p>
+      <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-surface-card p-6 text-center">
+        <p className="text-sm text-slate-500 dark:text-slate-400">{result.notFoundReason}</p>
       </div>
     );
   }
 
   return (
-    <div className="rounded-xl border border-slate-200 dark:border-white/15 bg-white dark:bg-slate-900/80 shadow-sm overflow-hidden">
+    <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-surface-card shadow-sm overflow-hidden">
       {/* Risk explanation */}
-      <div className="px-4 py-3 border-b border-slate-100 dark:border-white/10">
-        <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1">
+      <div className="px-4 py-3 border-b border-slate-100 dark:border-white/10 bg-slate-50/50 dark:bg-surface-elevated/40">
+        <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
           Route Corridor Analysis
         </div>
         <p className="text-xs text-slate-700 dark:text-slate-200 leading-relaxed">{result.riskExplanation}</p>
@@ -274,8 +276,7 @@ function RouteDetailPanel({ result }: { result: RouteResult }) {
 
       {/* Assumptions footer */}
       <div className="px-4 py-2.5 border-t border-slate-100 dark:border-white/10 text-[10px] text-slate-500 dark:text-slate-400">
-        ⚠️ Estimated travel time based on road type and status. Prototype model only.
-        Not live traffic. Not an official evacuation route.
+        ⚠️ Estimated transit duration calculated from road category, weather exposure, and reported hazards. Operational decision support; obey on-ground emergency directives.
       </div>
     </div>
   );
@@ -291,6 +292,10 @@ export interface RoutePlannerProps {
   onDestinationSafetyCalculated?: (safety: DestinationSafetyResult | null) => void;
   /** Callback when destination point is selected (Task 14) */
   onDestinationSelected?: (coords: LngLat, safetyScore: number, status: DestinationSafetyStatus) => void;
+  /** Callback when Task 15 journey risk is calculated */
+  onJourneyRiskCalculated?: (journeyRisk: JourneyRiskResult | null) => void;
+  /** Callback to highlight hazard corridor on map (Task 15) */
+  onCorridorHighlighted?: (points: Array<{ coordinates: [number, number]; risk: string; name: string }>) => void;
   className?: string;
   initialDestinationId?: string;
   initialOriginId?: string;
@@ -302,6 +307,8 @@ export function RoutePlanner({
   onRouteClear,
   onDestinationSafetyCalculated,
   onDestinationSelected,
+  onJourneyRiskCalculated,
+  onCorridorHighlighted,
   className,
   initialDestinationId = '',
   initialOriginId = '',
@@ -314,7 +321,7 @@ export function RoutePlanner({
   const [activeSlotKey, setActiveSlotKey] = useState<ScenarioSlotKey>('NOW');
   const [customDate, setCustomDate] = useState<string>('');
   const [customTime, setCustomTime] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<'ROUTES' | 'DESTINATION' | 'TRANSIT_RISK'>('ROUTES');
+  const [activeTab, setActiveTab] = useState<'JOURNEY' | 'ROUTES' | 'DESTINATION' | 'TRANSIT_RISK'>('JOURNEY');
   const [error, setError] = useState<string>('');
 
   // 1. Calculate Destination Safety whenever destinationId or scenario changes
@@ -348,9 +355,26 @@ export function RoutePlanner({
     });
   }, [activeResult, destinationSafety, results]);
 
+  // 4. Calculate Comprehensive Journey Risk (Task 15)
+  const journeyRisk = useMemo(() => {
+    if (!destinationSafety || !originId || !destinationId) return null;
+    return calculateJourneyRisk({
+      originNodeId: originId,
+      destinationNodeId: destinationId,
+      scenarioSlot: activeSlotKey,
+      selectedDate: customDate || undefined,
+      selectedTime: customTime || undefined,
+      selectedRoute: activeResult,
+      destinationSafety,
+    });
+  }, [originId, destinationId, activeSlotKey, customDate, customTime, activeResult, destinationSafety]);
+
   // Determine effective tab so that if user selected a destination without calculating routes,
   // it shows Destination Safety immediately without leaving an empty/broken tab body!
   const effectiveTab = useMemo(() => {
+    if (activeTab === 'JOURNEY' && !calculated && destinationSafety) {
+      return 'DESTINATION';
+    }
     if (activeTab === 'ROUTES' && !results && destinationSafety) {
       return 'DESTINATION';
     }
@@ -358,7 +382,7 @@ export function RoutePlanner({
       return 'DESTINATION';
     }
     return activeTab;
-  }, [activeTab, results, destinationSafety, travelRisk]);
+  }, [activeTab, calculated, results, destinationSafety, travelRisk]);
 
   const handleCalculate = useCallback(() => {
     setError('');
@@ -376,7 +400,7 @@ export function RoutePlanner({
     }
     setCalculated(true);
     setActiveMode('SAFEST');
-    setActiveTab('ROUTES');
+    setActiveTab('JOURNEY');
   }, [originId, destinationId]);
 
   const handleClear = useCallback(() => {
@@ -384,10 +408,12 @@ export function RoutePlanner({
     setOriginId('');
     setDestinationId('');
     setError('');
-    setActiveTab('ROUTES');
+    setActiveTab('JOURNEY');
     onRouteClear?.();
     onDestinationSafetyCalculated?.(null);
-  }, [onRouteClear, onDestinationSafetyCalculated]);
+    onJourneyRiskCalculated?.(null);
+    onCorridorHighlighted?.([]);
+  }, [onRouteClear, onDestinationSafetyCalculated, onJourneyRiskCalculated, onCorridorHighlighted]);
 
   // Notify parent of destination safety updates
   useEffect(() => {
@@ -400,6 +426,23 @@ export function RoutePlanner({
       );
     }
   }, [destinationSafety, onDestinationSafetyCalculated, onDestinationSelected]);
+
+  // Notify parent of Journey Risk and corridor highlights (Task 15)
+  useEffect(() => {
+    onJourneyRiskCalculated?.(journeyRisk);
+    if (journeyRisk && journeyRisk.hazardCorridor.length > 0) {
+      const pts = journeyRisk.hazardCorridor
+        .filter((c) => !!c.coordinates)
+        .map((c) => ({
+          coordinates: c.coordinates!,
+          risk: c.risk,
+          name: c.segmentName,
+        }));
+      onCorridorHighlighted?.(pts);
+    } else {
+      onCorridorHighlighted?.([]);
+    }
+  }, [journeyRisk, onJourneyRiskCalculated, onCorridorHighlighted]);
 
   // Emit map coordinates when active route changes
   useEffect(() => {
@@ -414,18 +457,18 @@ export function RoutePlanner({
 
   return (
     <div className={cn('flex flex-col gap-4', className)}>
-      {/* Prototype disclaimer */}
+      {/* Operations disclaimer */}
       <div className="px-3.5 py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-xs text-amber-800 dark:text-amber-200 flex items-start gap-2.5 backdrop-blur-md">
         <Sparkles className="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
         <div className="space-y-0.5">
           <div className="font-bold flex items-center gap-2">
-            <span>Prototype Route &amp; Destination Safety Intelligence</span>
-            <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-700 dark:text-amber-300 font-bold uppercase">
-              Task 13 + 14
+            <span>Safe Transit &amp; Corridor Risk Intelligence</span>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/20 text-amber-700 dark:text-amber-300 font-bold uppercase tracking-wider">
+              Decision Support
             </span>
           </div>
           <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
-            Deterministic scenario model for travel risk decision-support. Not live GPS traffic or official evacuation orders.
+            Multi-hazard scenario model for emergency transit decision-support. Not live GPS traffic or official evacuation mandates.
           </p>
         </div>
       </div>
@@ -461,14 +504,14 @@ export function RoutePlanner({
             }}
             className={cn(
               'w-full rounded-xl border text-sm px-3 py-2.5',
-              'bg-white dark:bg-slate-900 border-slate-300 dark:border-white/20',
+              'bg-white dark:bg-surface-elevated border-slate-300 dark:border-white/15',
               'text-slate-900 dark:text-slate-100 font-medium',
               'focus:outline-none focus:ring-2 focus:ring-accent/50'
             )}
           >
-            <option value="" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Select origin point…</option>
+            <option value="" className="bg-white dark:bg-surface-elevated text-slate-900 dark:text-slate-100">Select origin point…</option>
             {nodeOptions.map((n) => (
-              <option key={n.id} value={n.id} disabled={n.id === destinationId} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+              <option key={n.id} value={n.id} disabled={n.id === destinationId} className="bg-white dark:bg-surface-elevated text-slate-900 dark:text-slate-100">
                 {NODE_ICON[n.type]} {n.name}
               </option>
             ))}
@@ -490,14 +533,14 @@ export function RoutePlanner({
             }}
             className={cn(
               'w-full rounded-xl border text-sm px-3 py-2.5',
-              'bg-white dark:bg-slate-900 border-slate-300 dark:border-white/20',
+              'bg-white dark:bg-surface-elevated border-slate-300 dark:border-white/15',
               'text-slate-900 dark:text-slate-100 font-medium',
               'focus:outline-none focus:ring-2 focus:ring-accent/50'
             )}
           >
-            <option value="" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Select destination…</option>
+            <option value="" className="bg-white dark:bg-surface-elevated text-slate-900 dark:text-slate-100">Select destination…</option>
             {nodeOptions.map((n) => (
-              <option key={n.id} value={n.id} disabled={n.id === originId} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+              <option key={n.id} value={n.id} disabled={n.id === originId} className="bg-white dark:bg-surface-elevated text-slate-900 dark:text-slate-100">
                 {NODE_ICON[n.type]} {n.name}
               </option>
             ))}
@@ -537,7 +580,7 @@ export function RoutePlanner({
 
       {/* Quick Destination Safety preview banner if destination is selected but route not yet calculated */}
       {destinationSafety && !calculated && (
-        <div className="p-3.5 rounded-xl border border-slate-200 dark:border-white/20 bg-white/95 dark:bg-slate-900/90 shadow-sm flex items-center justify-between gap-3 backdrop-blur-md">
+        <div className="p-3.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-surface-elevated shadow-sm flex items-center justify-between gap-3 backdrop-blur-md">
           <div className="flex items-center gap-2.5">
             <div className="w-10 h-10 rounded-xl bg-accent/15 border border-accent/30 flex flex-col items-center justify-center text-accent flex-shrink-0">
               <span className="text-sm font-black leading-none">{destinationSafety.safetyScore}</span>
@@ -569,12 +612,27 @@ export function RoutePlanner({
 
       {/* Tab navigation if route and/or destination are active */}
       {(calculated || destinationSafety) && (
-        <div className="flex border-b border-slate-200 dark:border-white/15 gap-2 pt-2">
+        <div className="flex border-b border-slate-200 dark:border-white/15 gap-2 pt-2 overflow-x-auto scrollbar-none">
+          {calculated && journeyRisk && (
+            <button
+              onClick={() => setActiveTab('JOURNEY')}
+              className={cn(
+                'pb-2.5 px-2.5 text-xs font-bold transition-all border-b-2 flex items-center gap-1.5 whitespace-nowrap flex-shrink-0',
+                effectiveTab === 'JOURNEY'
+                  ? 'border-accent text-accent'
+                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+              )}
+            >
+              <span>🎯</span>
+              <span>Journey Risk</span>
+            </button>
+          )}
+
           {calculated && (
             <button
               onClick={() => setActiveTab('ROUTES')}
               className={cn(
-                'pb-2.5 px-2.5 text-xs font-bold transition-all border-b-2 flex items-center gap-1.5',
+                'pb-2.5 px-2.5 text-xs font-bold transition-all border-b-2 flex items-center gap-1.5 whitespace-nowrap flex-shrink-0',
                 effectiveTab === 'ROUTES'
                   ? 'border-accent text-accent'
                   : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
@@ -585,26 +643,11 @@ export function RoutePlanner({
             </button>
           )}
 
-          {travelRisk?.hasRoute && (
-            <button
-              onClick={() => setActiveTab('TRANSIT_RISK')}
-              className={cn(
-                'pb-2.5 px-2.5 text-xs font-bold transition-all border-b-2 flex items-center gap-1.5',
-                effectiveTab === 'TRANSIT_RISK'
-                  ? 'border-accent text-accent'
-                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-              )}
-            >
-              <Compass className="w-3.5 h-3.5" />
-              <span>Overall Travel Risk</span>
-            </button>
-          )}
-
           {destinationSafety && (
             <button
               onClick={() => setActiveTab('DESTINATION')}
               className={cn(
-                'pb-2.5 px-2.5 text-xs font-bold transition-all border-b-2 flex items-center gap-1.5',
+                'pb-2.5 px-2.5 text-xs font-bold transition-all border-b-2 flex items-center gap-1.5 whitespace-nowrap flex-shrink-0',
                 effectiveTab === 'DESTINATION'
                   ? 'border-accent text-accent'
                   : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
@@ -614,7 +657,36 @@ export function RoutePlanner({
               <span>Destination Safety</span>
             </button>
           )}
+
+          {travelRisk?.hasRoute && (
+            <button
+              onClick={() => setActiveTab('TRANSIT_RISK')}
+              className={cn(
+                'pb-2.5 px-2.5 text-xs font-bold transition-all border-b-2 flex items-center gap-1.5 whitespace-nowrap flex-shrink-0',
+                effectiveTab === 'TRANSIT_RISK'
+                  ? 'border-accent text-accent'
+                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+              )}
+            >
+              <Compass className="w-3.5 h-3.5" />
+              <span>Overall Travel Risk</span>
+            </button>
+          )}
         </div>
+      )}
+
+      {/* Tab 0: Comprehensive Journey Risk Intelligence (Task 15) */}
+      {effectiveTab === 'JOURNEY' && journeyRisk && (
+        <JourneyRiskPanel
+          journeyRisk={journeyRisk}
+          activeMode={activeMode}
+          onSelectMode={(mode) => setActiveMode(mode)}
+          onSelectTimeSlot={(slotKey) => {
+            setActiveSlotKey(slotKey as ScenarioSlotKey);
+            setCustomDate('');
+            setCustomTime('');
+          }}
+        />
       )}
 
       {/* Tab 1: Route Options & Segments */}
