@@ -421,3 +421,103 @@ export function addCitizenReportLayers(
     });
   }
 }
+
+// ── Route layers (Task 13) ──────────────────────────────────────────────────────────────
+
+/**
+ * Adds / updates the active route line and origin/destination markers.
+ * Designed to be called every time a new route is selected.
+ * Does NOT preserve previous route state.
+ */
+export function addOrUpdateRouteLayers(
+  map: MLMap,
+  lineData: FeatureCollection<LineString, GeoJsonProperties>,
+  originData: FeatureCollection<Point, GeoJsonProperties>,
+  destData: FeatureCollection<Point, GeoJsonProperties>,
+  color: string,
+): void {
+  // Route line source
+  addOrUpdateSource(map, 'route-line', lineData);
+  addOrUpdateSource(map, 'route-origin', originData);
+  addOrUpdateSource(map, 'route-dest', destData);
+
+  // Casing (renders below)
+  if (!hasLayer(map, mapLayerIds.routeLineCasing)) {
+    map.addLayer({
+      id: mapLayerIds.routeLineCasing,
+      type: 'line',
+      source: 'route-line',
+      layout: { 'line-cap': 'round', 'line-join': 'round' },
+      paint: {
+        'line-color': '#000000',
+        'line-width': 10,
+        'line-opacity': 0.3,
+      },
+    });
+  }
+
+  // Main route line
+  if (!hasLayer(map, mapLayerIds.routeLine)) {
+    map.addLayer({
+      id: mapLayerIds.routeLine,
+      type: 'line',
+      source: 'route-line',
+      layout: { 'line-cap': 'round', 'line-join': 'round' },
+      paint: {
+        'line-color': color,
+        'line-width': 4,
+        'line-opacity': 0.92,
+      },
+    });
+  } else {
+    map.setPaintProperty(mapLayerIds.routeLine, 'line-color', color);
+  }
+
+  // Origin marker
+  if (!hasLayer(map, mapLayerIds.routeOrigin)) {
+    map.addLayer({
+      id: mapLayerIds.routeOrigin,
+      type: 'circle',
+      source: 'route-origin',
+      paint: {
+        'circle-color': '#22D3EE',
+        'circle-radius': 9,
+        'circle-stroke-width': 2.5,
+        'circle-stroke-color': '#0E1422',
+        'circle-opacity': 1,
+      },
+    });
+  }
+
+  // Destination marker
+  if (!hasLayer(map, mapLayerIds.routeDestination)) {
+    map.addLayer({
+      id: mapLayerIds.routeDestination,
+      type: 'circle',
+      source: 'route-dest',
+      paint: {
+        'circle-color': '#10B981',
+        'circle-radius': 9,
+        'circle-stroke-width': 2.5,
+        'circle-stroke-color': '#0E1422',
+        'circle-opacity': 1,
+      },
+    });
+  }
+}
+
+/** Remove all route layers and sources cleanly */
+export function removeRouteLayers(map: MLMap): void {
+  const layerIds = [
+    mapLayerIds.routeLine,
+    mapLayerIds.routeLineCasing,
+    mapLayerIds.routeOrigin,
+    mapLayerIds.routeDestination,
+  ];
+  for (const id of layerIds) {
+    if (hasLayer(map, id)) map.removeLayer(id);
+  }
+  for (const src of ['route-line', 'route-origin', 'route-dest']) {
+    if (hasSource(map, src)) map.removeSource(src);
+  }
+}

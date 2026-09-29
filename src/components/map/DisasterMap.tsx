@@ -26,8 +26,11 @@ import { buildResourcePlanningForZone, type ResourcePlanningResult } from '@/lib
 import { ReportDetailPanel } from '@/components/reports/ReportDetailPanel';
 import { CitizenReportForm } from '@/components/reports/CitizenReportForm';
 import { RoadDetailPanel } from '@/components/roads/RoadDetailPanel';
+import { RouteMapOverlay } from '@/components/routing/RouteMapOverlay';
 import { createCitizenReport, type CitizenReportItem } from '@/lib/reports';
 import { demoCitizenReports } from '@/data/demo/citizenReports';
+import { addOrUpdateRouteLayers, removeRouteLayers } from './layers/addLayers';
+import type { RouteResult } from '@/lib/routing/types';
 import { demoRoadSegments } from '@/data/demo';
 import type { RoadSegment } from '@/lib/roads/types';
 import { mapLayerIds, getMapStyleForTheme } from '@/config/map';
@@ -151,6 +154,13 @@ function buildImpact(mhId: string, zoneName: string, expl: MultiHazardRiskExplan
   });
 }
 
+// ── Route colors (outside component to avoid recreation) ────────────────────
+const ROUTE_COLORS: Record<string, string> = {
+  SAFEST:      '#10B981',
+  SHORTEST:    '#F59E0B',
+  ALTERNATIVE: '#A78BFA',
+};
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 interface DisasterMapProps {
@@ -169,6 +179,7 @@ export function DisasterMap({ dataset, className, center, zoom }: DisasterMapPro
   const [activeRoad, setActiveRoad] = useState<RoadSegment | null>(null);
   const [isReportFormOpen, setIsReportFormOpen] = useState(false);
   const [activeTab, setActiveTab]     = useState<ZoneDetailTab>('risk');
+  const [, setActiveRouteMode] = useState<RouteResult['mode'] | null>(null);
   const mapRef                        = useRef<MLMap | null>(null);
   const popupRef                      = useRef<import('maplibre-gl').Popup | null>(null);
   const prevLayers                    = useRef<LayerToggle[]>(INITIAL_LAYERS);
@@ -364,6 +375,67 @@ export function DisasterMap({ dataset, className, center, zoom }: DisasterMapPro
     map.on('click', handleClick);
   }, [dataset]);
 
+  // ── Route visualization callbacks ────────────────────────────────────────
+
+  const handleRouteSelected = useCallback((coords: [number, number][], mode: RouteResult['mode']) => {
+    const map = mapRef.current;
+    if (!map) return;
+    setActiveRouteMode(mode);
+
+    // Build GeoJSON for line
+    const lineFC = {
+      type: 'FeatureCollection' as const,
+      features: [{
+        type: 'Feature' as const,
+        id: 'active-route',
+        geometry: { type: 'LineString' as const, coordinates: coords },
+        properties: { mode },
+      }],
+    };
+
+    // Origin + destination from first/last coord
+    const origin = coords[0];
+    const dest   = coords[coords.length - 1];
+    const originFC = {
+      type: 'FeatureCollection' as const,
+      features: [{
+        type: 'Feature' as const,
+        id: 'route-origin',
+        geometry: { type: 'Point' as const, coordinates: origin },
+        properties: { label: 'Origin' },
+      }],
+    };
+    const destFC = {
+      type: 'FeatureCollection' as const,
+      features: [{
+        type: 'Feature' as const,
+        id: 'route-dest',
+        geometry: { type: 'Point' as const, coordinates: dest },
+        properties: { label: 'Destination' },
+      }],
+    };
+
+    addOrUpdateRouteLayers(map, lineFC, originFC, destFC, ROUTE_COLORS[mode] ?? '#22D3EE');
+
+    // Fit map to route bounds
+    if (coords.length > 1) {
+      const lngs = coords.map((c) => c[0]);
+      const lats = coords.map((c) => c[1]);
+      try {
+        map.fitBounds(
+          [[Math.min(...lngs), Math.min(...lats)], [Math.max(...lngs), Math.max(...lats)]],
+          { padding: 80, maxZoom: 12, duration: 600 },
+        );
+      } catch { /* ignore bounds errors */ }
+    }
+  }, []);
+
+  const handleRouteClear = useCallback(() => {
+    const map = mapRef.current;
+    if (map) removeRouteLayers(map);
+    setActiveRouteMode(null);
+  }, []);
+
   const handleToggle     = useCallback((id: string) => {
     setLayers((prev) => prev.map((l) => l.id === id ? { ...l, enabled: !l.enabled } : l));
   }, []);
@@ -446,6 +518,12 @@ export function DisasterMap({ dataset, className, center, zoom }: DisasterMapPro
             <span>📢</span>
             <span className="hidden sm:inline">Report Incident</span>
           </button>
+          {/* Task 13: Route Planner toggle */}
+          <RouteMapOverlay
+            onRouteSelected={handleRouteSelected}
+            onRouteClear={handleRouteClear}
+            className="mt-1"
+          />
         </div>
       </div>
 

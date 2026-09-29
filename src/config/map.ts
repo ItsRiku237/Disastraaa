@@ -88,6 +88,12 @@ export const mapLayerIds = {
 
   // Historical events
   historicalEvents: 'historical-events-points',
+
+  // Routing (Task 13)
+  routeLine:        'route-line',
+  routeLineCasing:  'route-line-casing',
+  routeOrigin:      'route-origin-point',
+  routeDestination: 'route-destination-point',
 } as const;
 
 export type MapLayerId = (typeof mapLayerIds)[keyof typeof mapLayerIds];

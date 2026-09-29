@@ -40,6 +40,7 @@ import {
 } from '@/lib/roads';
 import type { CitizenReportItem } from '@/lib/reports/types';
 import { Footer } from '@/components/layout/Footer';
+import { RoutePlanner } from '@/components/routing/RoutePlanner';
 
 export default function TravelPage() {
   const [roads, setRoads] = useState<RoadSegment[]>(demoRoadSegments);
@@ -106,6 +107,20 @@ export default function TravelPage() {
                 <MapIcon className="w-4 h-4" />
                 <span>View on GIS Map</span>
               </Link>
+            </div>
+          </div>
+
+          {/* Task 13 — Route Planner section */}
+          <div className="bg-white dark:bg-surface-card rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm overflow-hidden">
+            <div className="px-5 py-4 border-b border-slate-100 dark:border-white/[0.06] flex items-center justify-between">
+              <div>
+                <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-500 mb-0.5">Task 13 · Prototype</div>
+                <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">🗺️ Safe &amp; Alternative Route Intelligence</h2>
+                <p className="text-[11px] text-slate-500 mt-0.5">Select origin and destination to compare Safest, Shortest, and Alternative routes based on current disaster intelligence.</p>
+              </div>
+            </div>
+            <div className="p-5">
+              <RoutePlanner />
             </div>
           </div>
 
