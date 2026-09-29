@@ -29,13 +29,18 @@ import { RoadDetailPanel } from '@/components/roads/RoadDetailPanel';
 import { RouteMapOverlay } from '@/components/routing/RouteMapOverlay';
 import { createCitizenReport, type CitizenReportItem } from '@/lib/reports';
 import { demoCitizenReports } from '@/data/demo/citizenReports';
-import { addOrUpdateRouteLayers, removeRouteLayers } from './layers/addLayers';
+import {
+  addOrUpdateRouteLayers,
+  removeRouteLayers,
+  addOrUpdateDestinationSafetyLayers,
+  removeDestinationSafetyLayers,
+} from './layers/addLayers';
 import type { RouteResult } from '@/lib/routing/types';
+import type { DestinationSafetyStatus } from '@/lib/destination/types';
 import { demoRoadSegments } from '@/data/demo';
 import type { RoadSegment } from '@/lib/roads/types';
 import { mapLayerIds, getMapStyleForTheme } from '@/config/map';
 import { useTheme } from '@/context/ThemeContext';
-import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import {
   riskZonesToGeoJSON,
   floodAreasToGeoJSON,
@@ -430,9 +435,32 @@ export function DisasterMap({ dataset, className, center, zoom }: DisasterMapPro
     }
   }, []);
 
+  const handleDestinationSelected = useCallback((coords: [number, number], safetyScore: number, status: DestinationSafetyStatus) => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    const STATUS_COLORS: Record<DestinationSafetyStatus, string> = {
+      SAFE: '#10B981',
+      CAUTION: '#F59E0B',
+      HIGH_RISK: '#F97316',
+      CRITICAL: '#EF4444',
+    };
+
+    const color = STATUS_COLORS[status] || '#10B981';
+    addOrUpdateDestinationSafetyLayers(map, coords, color, 8);
+  }, []);
+
+  const handleDestinationClear = useCallback(() => {
+    const map = mapRef.current;
+    if (map) removeDestinationSafetyLayers(map);
+  }, []);
+
   const handleRouteClear = useCallback(() => {
     const map = mapRef.current;
-    if (map) removeRouteLayers(map);
+    if (map) {
+      removeRouteLayers(map);
+      removeDestinationSafetyLayers(map);
+    }
     setActiveRouteMode(null);
   }, []);
 
@@ -504,32 +532,36 @@ export function DisasterMap({ dataset, className, center, zoom }: DisasterMapPro
         </div>
       </div>
 
-      {/* Map tools: Layer control + Theme switch */}
-      <div className="absolute left-3 top-12 pointer-events-none z-10 flex flex-col gap-2">
-        <div className="flex items-center gap-2 pointer-events-auto flex-wrap">
-          <LayerControl layers={layers} onToggle={handleToggle} className="mt-1" />
-          <ThemeToggle size="sm" showLabel={true} className="mt-1 shadow-lg backdrop-blur-md map-panel font-medium" />
-          <button
-            type="button"
-            onClick={() => setIsReportFormOpen(true)}
-            className="mt-1 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-accent text-slate-950 hover:bg-accent/90 shadow-lg backdrop-blur-md transition-all active:scale-98"
-            title="Submit a ground disaster report"
-          >
-            <span>📢</span>
-            <span className="hidden sm:inline">Report Incident</span>
-          </button>
-          {/* Task 13: Route Planner toggle */}
+      {/* Map tools: Layer control + Report Incident + Travel Intelligence stacked vertically */}
+      <div className="absolute left-3 top-4 pointer-events-none z-20 flex flex-col items-start gap-2">
+        {/* Minimizable Map Layers */}
+        <LayerControl layers={layers} onToggle={handleToggle} />
+
+        {/* Report Incident button */}
+        <button
+          type="button"
+          onClick={() => setIsReportFormOpen(true)}
+          className="pointer-events-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-accent text-slate-950 hover:bg-accent/90 shadow-lg backdrop-blur-md transition-all active:scale-98 border border-accent/40"
+          title="Submit a ground disaster report"
+        >
+          <span>📢</span>
+          <span>Report Incident</span>
+        </button>
+
+        {/* Task 13 + 14: Route & Destination Planner toggle */}
+        <div className="pointer-events-auto">
           <RouteMapOverlay
             onRouteSelected={handleRouteSelected}
             onRouteClear={handleRouteClear}
-            className="mt-1"
+            onDestinationSelected={handleDestinationSelected}
+            onDestinationClear={handleDestinationClear}
           />
         </div>
       </div>
 
       {/* Alert badge */}
       {activeAlerts.length > 0 && (
-        <div className="absolute top-12 right-3 pointer-events-none z-10 mt-1">
+        <div className="absolute top-4 right-3 pointer-events-none z-20">
           <div className="pointer-events-auto flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface-elevated/95 border border-white/10 shadow-lg backdrop-blur-sm map-panel">
             <span className="w-2 h-2 rounded-full bg-critical animate-pulse-slow flex-shrink-0" />
             <span className="text-xs font-semibold text-slate-200 whitespace-nowrap">

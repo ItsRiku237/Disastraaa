@@ -94,6 +94,11 @@ export const mapLayerIds = {
   routeLineCasing:  'route-line-casing',
   routeOrigin:      'route-origin-point',
   routeDestination: 'route-destination-point',
+
+  // Destination Safety (Task 14)
+  destSafetyRadiusFill:    'dest-safety-radius-fill',
+  destSafetyRadiusOutline: 'dest-safety-radius-outline',
+  destSafetyMarker:        'dest-safety-marker',
 } as const;
 
 export type MapLayerId = (typeof mapLayerIds)[keyof typeof mapLayerIds];

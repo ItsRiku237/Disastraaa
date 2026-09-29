@@ -87,15 +87,15 @@ export default function TravelPage() {
             <div>
               <div className="flex items-center gap-2 text-xs font-semibold text-accent uppercase tracking-wider mb-1">
                 <Navigation className="w-3.5 h-3.5" />
-                <span>Road Intelligence & Travel Safety</span>
+                <span>Road Intelligence, Routes &amp; Destination Safety</span>
                 <span className="text-slate-400 dark:text-slate-600">•</span>
-                <span className="text-slate-500 dark:text-slate-400">Task 12 Prototype</span>
+                <span className="text-slate-500 dark:text-slate-400">Task 12, 13 &amp; 14 Prototype</span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">
-                Disaster Roadway Intelligence & Disruptions
+                Disaster Roadway Intelligence &amp; Safe Travel Planning
               </h1>
               <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-3xl">
-                Real-time road transit status, disaster hazard exposure, citizen blockage reports, and official authority verifications. Check safe routes and avoid impassable corridors.
+                Real-time roadway conditions, date/time travel risk intelligence, destination safety checks, and alternative safe transit routing under disaster scenarios.
               </p>
             </div>
 
@@ -110,16 +110,23 @@ export default function TravelPage() {
             </div>
           </div>
 
-          {/* Task 13 — Route Planner section */}
-          <div className="bg-white dark:bg-surface-card rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm overflow-hidden">
-            <div className="px-5 py-4 border-b border-slate-100 dark:border-white/[0.06] flex items-center justify-between">
+          {/* Task 13 & 14 — Destination Safety & Route Planning section */}
+          <div className="bg-white/95 dark:bg-slate-900/90 rounded-2xl border border-slate-200 dark:border-white/20 shadow-xl backdrop-blur-xl overflow-hidden ring-1 ring-black/5 dark:ring-white/10">
+            <div className="px-6 py-4.5 border-b border-slate-200 dark:border-white/15 bg-slate-50/90 dark:bg-slate-800/80 flex items-center justify-between">
               <div>
-                <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-500 mb-0.5">Task 13 · Prototype</div>
-                <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">🗺️ Safe &amp; Alternative Route Intelligence</h2>
-                <p className="text-[11px] text-slate-500 mt-0.5">Select origin and destination to compare Safest, Shortest, and Alternative routes based on current disaster intelligence.</p>
+                <div className="text-[10px] font-bold uppercase tracking-widest text-accent mb-0.5">Task 13 + 14 · Decision Support</div>
+                <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                  <span>🗺️ Destination Safety &amp; Routes</span>
+                  <span className="text-xs font-mono font-normal text-slate-500 dark:text-slate-400">
+                    · Travel Risk Intelligence
+                  </span>
+                </h2>
+                <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5">
+                  Select destination and time horizon to inspect localized safety factors, active warnings, and calculate combined route transit risk.
+                </p>
               </div>
             </div>
-            <div className="p-5">
+            <div className="p-5 sm:p-7 min-h-[580px]">
               <RoutePlanner />
             </div>
           </div>

@@ -521,3 +521,126 @@ export function removeRouteLayers(map: MLMap): void {
     if (hasSource(map, src)) map.removeSource(src);
   }
 }
+
+/**
+ * Create a GeoJSON polygon approximating a circle around a center point [lng, lat]
+ */
+export function createCircleGeoJSON(center: [number, number], radiusKm: number, points: number = 48) {
+  const coords: [number, number][] = [];
+  const distanceX = radiusKm / (111.32 * Math.cos((center[1] * Math.PI) / 180));
+  const distanceY = radiusKm / 110.574;
+
+  for (let i = 0; i <= points; i++) {
+    const theta = (i / points) * (2 * Math.PI);
+    const x = distanceX * Math.cos(theta);
+    const y = distanceY * Math.sin(theta);
+    coords.push([center[0] + x, center[1] + y]);
+  }
+
+  return {
+    type: 'FeatureCollection' as const,
+    features: [
+      {
+        type: 'Feature' as const,
+        id: 'dest-safety-radius-feature',
+        geometry: {
+          type: 'Polygon' as const,
+          coordinates: [coords],
+        },
+        properties: {},
+      },
+    ],
+  };
+}
+
+/**
+ * Add or update destination safety radius and marker layers (Task 14)
+ */
+export function addOrUpdateDestinationSafetyLayers(
+  map: MLMap,
+  center: [number, number],
+  color: string,
+  radiusKm: number = 8,
+): void {
+  const radiusData = createCircleGeoJSON(center, radiusKm);
+  const pointData = {
+    type: 'FeatureCollection' as const,
+    features: [
+      {
+        type: 'Feature' as const,
+        id: 'dest-safety-point-feature',
+        geometry: { type: 'Point' as const, coordinates: center },
+        properties: {},
+      },
+    ],
+  };
+
+  addOrUpdateSource(map, 'dest-safety-radius', radiusData as any);
+  addOrUpdateSource(map, 'dest-safety-marker', pointData as any);
+
+  // Buffer fill
+  if (!hasLayer(map, mapLayerIds.destSafetyRadiusFill)) {
+    map.addLayer({
+      id: mapLayerIds.destSafetyRadiusFill,
+      type: 'fill',
+      source: 'dest-safety-radius',
+      paint: {
+        'fill-color': color,
+        'fill-opacity': 0.18,
+      },
+    });
+  } else {
+    map.setPaintProperty(mapLayerIds.destSafetyRadiusFill, 'fill-color', color);
+  }
+
+  // Buffer outline
+  if (!hasLayer(map, mapLayerIds.destSafetyRadiusOutline)) {
+    map.addLayer({
+      id: mapLayerIds.destSafetyRadiusOutline,
+      type: 'line',
+      source: 'dest-safety-radius',
+      paint: {
+        'line-color': color,
+        'line-width': 2,
+        'line-dasharray': [3, 2],
+        'line-opacity': 0.85,
+      },
+    });
+  } else {
+    map.setPaintProperty(mapLayerIds.destSafetyRadiusOutline, 'line-color', color);
+  }
+
+  // Destination pulsing beacon
+  if (!hasLayer(map, mapLayerIds.destSafetyMarker)) {
+    map.addLayer({
+      id: mapLayerIds.destSafetyMarker,
+      type: 'circle',
+      source: 'dest-safety-marker',
+      paint: {
+        'circle-color': color,
+        'circle-radius': 11,
+        'circle-stroke-width': 3,
+        'circle-stroke-color': '#0E1422',
+        'circle-opacity': 1,
+      },
+    });
+  } else {
+    map.setPaintProperty(mapLayerIds.destSafetyMarker, 'circle-color', color);
+  }
+}
+
+/** Remove destination safety layers cleanly */
+export function removeDestinationSafetyLayers(map: MLMap): void {
+  const layerIds = [
+    mapLayerIds.destSafetyRadiusFill,
+    mapLayerIds.destSafetyRadiusOutline,
+    mapLayerIds.destSafetyMarker,
+  ];
+  for (const id of layerIds) {
+    if (hasLayer(map, id)) map.removeLayer(id);
+  }
+  for (const src of ['dest-safety-radius', 'dest-safety-marker']) {
+    if (hasSource(map, src)) map.removeSource(src);
+  }
+}
+
