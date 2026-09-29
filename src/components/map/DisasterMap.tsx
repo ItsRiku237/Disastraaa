@@ -171,16 +171,17 @@ const ROUTE_COLORS: Record<string, string> = {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 interface DisasterMapProps {
-  dataset:    DisasterDataset;
-  className?: string;
-  center?:    [number, number];
-  zoom?:      number;
+  dataset:        DisasterDataset;
+  className?:     string;
+  center?:        [number, number];
+  zoom?:          number;
+  initialLayers?: LayerToggle[];
 }
 
-export function DisasterMap({ dataset, className, center, zoom }: DisasterMapProps) {
+export function DisasterMap({ dataset, className, center, zoom, initialLayers }: DisasterMapProps) {
   const { theme } = useTheme();
   const mapStyle = getMapStyleForTheme(theme);
-  const [layers, setLayers]           = useState<LayerToggle[]>(INITIAL_LAYERS);
+  const [layers, setLayers]           = useState<LayerToggle[]>(initialLayers ?? INITIAL_LAYERS);
   const [activePanel, setActivePanel] = useState<HazardPanelState>(null);
   const [activeReport, setActiveReport] = useState<CitizenReportItem | null>(null);
   const [activeRoad, setActiveRoad] = useState<RoadSegment | null>(null);
@@ -189,8 +190,8 @@ export function DisasterMap({ dataset, className, center, zoom }: DisasterMapPro
   const [, setActiveRouteMode] = useState<RouteResult['mode'] | null>(null);
   const mapRef                        = useRef<MLMap | null>(null);
   const popupRef                      = useRef<import('maplibre-gl').Popup | null>(null);
-  const prevLayers                    = useRef<LayerToggle[]>(INITIAL_LAYERS);
-  const layersRef                     = useRef<LayerToggle[]>(INITIAL_LAYERS);
+  const prevLayers                    = useRef<LayerToggle[]>(initialLayers ?? INITIAL_LAYERS);
+  const layersRef                     = useRef<LayerToggle[]>(initialLayers ?? INITIAL_LAYERS);
   const clickHandlerRef               = useRef<((e: any) => void) | null>(null);
   const mouseMoveHandlerRef           = useRef<((e: any) => void) | null>(null);
 

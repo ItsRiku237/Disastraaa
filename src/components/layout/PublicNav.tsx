@@ -56,7 +56,7 @@ export function PublicNav() {
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-accent/40 text-cyan-700 dark:text-accent hover:bg-accent/10 transition-colors"
           >
             <Shield className="w-3.5 h-3.5" />
-            Authority Login
+            Command Center
           </Link>
         </div>
 
@@ -102,7 +102,7 @@ export function PublicNav() {
                 className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-cyan-700 dark:text-accent hover:bg-accent/10 transition-colors"
               >
                 <Shield className="w-4 h-4" />
-                Authority Login
+                Command Center
               </Link>
             </div>
           </div>

@@ -35,7 +35,7 @@ export const dashboardNavGroups: NavGroup[] = [
   {
     label: 'Overview',
     items: [
-      { label: 'Dashboard', href: '/dashboard',  icon: 'LayoutDashboard' },
+      { label: 'Command Center', href: '/dashboard', icon: 'LayoutDashboard' },
       { label: 'Live Map',  href: '/map',         icon: 'Map' },
       { label: 'Alerts',    href: '/alerts',      icon: 'Bell' },
     ],
