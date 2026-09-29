@@ -2,23 +2,33 @@
 
 /**
  * MapPageClient — client entry point for the public map page.
- *
- * Imports demo dataset and renders DisasterMap.
- * Swap `demoDataset` for a real API fetch (SWR / React Query / server action)
- * without touching any map or layer component.
+ * Powered by Live Intelligence stream overrides.
  */
 
+import { useMemo } from 'react';
 import { demoDataset } from '@/data/demo';
 import { DisasterMap } from '@/components/map/DisasterMap';
+import { useLiveIntelligence } from '@/context/LiveIntelligenceContext';
 
 export function MapPageClient() {
+  const { overrides } = useLiveIntelligence();
+
+  const liveDataset = useMemo(
+    () => ({
+      ...demoDataset,
+      alerts: overrides.alerts,
+      shelters: overrides.shelters,
+    }),
+    [overrides.alerts, overrides.shelters],
+  );
+
   return (
     <DisasterMap
-      dataset={demoDataset}
+      dataset={liveDataset}
       className="w-full h-full"
-      // Centred on Odisha coast where most demo events are clustered
       center={[85.8, 20.0]}
       zoom={7.0}
     />
   );
 }
+

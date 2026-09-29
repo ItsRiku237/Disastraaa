@@ -3,6 +3,8 @@
 import { Shield, Radio, Search, SlidersHorizontal, RefreshCw, AlertCircle } from 'lucide-react';
 import { Badge } from '@/components/ui';
 import { AuthorityRoleSwitcher } from '@/components/auth/AuthorityRoleSwitcher';
+import { LiveStatusIndicator } from '@/components/realtime/LiveStatusIndicator';
+import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { type Role } from '@/types/roles';
 import { getDemoUserContext } from '@/lib/auth/roles';
 
@@ -50,16 +52,15 @@ export function ResponseOperationsHeader({
 
         {/* Right: Controls & Role Switcher */}
         <div className="flex items-center gap-2.5 flex-wrap self-start lg:self-center">
-          <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-elevated border border-white/[0.06] text-[11px] text-slate-300">
-            <Radio className="w-3.5 h-3.5 text-safe animate-pulse" />
-            <span className="font-mono">OPS FEED LIVE</span>
-          </div>
+          <LiveStatusIndicator />
 
           <Badge className="text-[11px] bg-amber-500/10 text-amber-300 border-amber-500/30">
             Decision Support Only
           </Badge>
 
           <AuthorityRoleSwitcher currentRole={currentRole} onRoleChange={onRoleChange} />
+
+          <ThemeToggle />
 
           {onRefresh && (
             <button

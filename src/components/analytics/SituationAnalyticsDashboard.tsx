@@ -31,6 +31,8 @@ import type {
 import type { Severity } from '@/types';
 import { ROLES, type Role } from '@/types/roles';
 
+import { useLiveIntelligence } from '@/context/LiveIntelligenceContext';
+
 interface SituationAnalyticsDashboardProps {
   initialRole?: Role;
 }
@@ -41,7 +43,7 @@ export function SituationAnalyticsDashboard({
   const [role, setRole] = useState<Role>(initialRole);
   const [selectedLocation, setSelectedLocation] = useState<RegionalAnalyticsRow | null>(null);
 
-  // Filter State
+  // Filters State
   const [filters, setFilters] = useState<AnalyticsFilterState>({
     hazard: 'ALL',
     region: 'ALL',
@@ -51,8 +53,9 @@ export function SituationAnalyticsDashboard({
     searchQuery: '',
   });
 
-  // Base Data Aggregated Deterministically
-  const baseData: SituationAnalyticsData = useMemo(() => buildSituationAnalyticsData(), []);
+  // Base Data from Live Intelligence Stream
+  const { situationAnalyticsData, refreshNow } = useLiveIntelligence();
+  const baseData: SituationAnalyticsData = situationAnalyticsData;
 
   // Filtered Regional Rows
   const filteredRows = useMemo(() => {

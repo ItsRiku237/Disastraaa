@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import { brand } from '@/config/brand';
 import { ThemeProvider } from '@/context/ThemeContext';
+import { LiveIntelligenceProvider } from '@/context/LiveIntelligenceContext';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -53,7 +54,9 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen bg-surface-base text-slate-100 font-sans antialiased transition-colors duration-200">
         <ThemeProvider>
-          {children}
+          <LiveIntelligenceProvider>
+            {children}
+          </LiveIntelligenceProvider>
         </ThemeProvider>
       </body>
     </html>

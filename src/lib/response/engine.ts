@@ -201,16 +201,30 @@ function buildZoneTimeline(zoneName: string, priorityScore: number): ResponseTim
   ];
 }
 
+import type { CommandCenterData } from '@/lib/commandCenter/types';
+import type { DemoAlert as Alert, Shelter } from '@/data/types';
+import type { CitizenReportItem } from '@/lib/reports/types';
+import type { RoadSegment } from '@/lib/roads/types';
+
 /**
  * Builds the complete Response Coordination & Resource Operations dataset.
+ * Accepts optional live command center data and overrides.
  */
-export function buildResponseCoordinationData(): ResponseCoordinationData {
-  const ccData = aggregateCommandCenterData();
-  const alerts = demoDataset.alerts;
+export function buildResponseCoordinationData(
+  providedCcData?: CommandCenterData,
+  overrides?: {
+    alerts?: Alert[];
+    reports?: CitizenReportItem[];
+    roads?: RoadSegment[];
+    shelters?: Shelter[];
+  },
+): ResponseCoordinationData {
+  const ccData = providedCcData ?? aggregateCommandCenterData();
+  const alerts = overrides?.alerts ?? demoDataset.alerts;
   const activeAlerts = alerts.filter((a) => a.isActive);
-  const reports = demoCitizenReports;
-  const roads = demoRoadSegments;
-  const shelters = demoDataset.shelters;
+  const reports = overrides?.reports ?? demoCitizenReports;
+  const roads = overrides?.roads ?? demoRoadSegments;
+  const shelters = overrides?.shelters ?? demoDataset.shelters;
 
   // 1. Build Response Zones
   const zones: ResponseZoneItem[] = ccData.priorityLocations.map((loc) => {

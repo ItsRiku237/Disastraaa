@@ -22,6 +22,8 @@ import type { ResourceRequirementItem } from '@/lib/planning/resources/types';
 import { formatNumber } from '@/lib/utils';
 import type { HazardType, Severity, ReportStatus } from '@/types';
 import type { RoadStatus, RoadSegment } from '@/lib/roads/types';
+import type { DemoAlert as Alert, Shelter } from '@/data/types';
+import type { CitizenReportItem } from '@/lib/reports/types';
 import type {
   CommandCenterData,
   PriorityLocation,
@@ -130,21 +132,49 @@ const LOCATION_METAS: LocationMeta[] = [
   },
 ];
 
+export interface CommandCenterDataOverrides {
+  alerts?: Alert[];
+  reports?: CitizenReportItem[];
+  roads?: RoadSegment[];
+  shelters?: Shelter[];
+  shelterOccupancies?: Record<string, number>;
+  resourceStocks?: Record<string, number>;
+  riverGaugeDeltas?: Record<string, number>;
+  rainfallDeltas?: Record<string, number>;
+}
+
 /**
  * Builds the complete unified command center intelligence dataset.
+ * Supports dynamic live data overrides without modifying baseline sources.
  */
-export function aggregateCommandCenterData(): CommandCenterData {
-  const alerts = demoDataset.alerts;
+export function aggregateCommandCenterData(overrides?: CommandCenterDataOverrides): CommandCenterData {
+  const alerts = overrides?.alerts ?? demoDataset.alerts;
   const activeAlerts = alerts.filter((a) => a.isActive);
-  const reports = demoCitizenReports;
-  const roads = demoRoadSegments;
-  const shelters = demoDataset.shelters;
+  const reports = overrides?.reports ?? demoCitizenReports;
+  const roads = overrides?.roads ?? demoRoadSegments;
+  const rawShelters = overrides?.shelters ?? demoDataset.shelters;
+  const shelters = overrides?.shelterOccupancies
+    ? rawShelters.map((s) => {
+        const occ = overrides.shelterOccupancies![s.id];
+        return typeof occ === 'number'
+          ? { ...s, occupancy: occ, status: occ >= s.capacity ? ('FULL' as const) : ('OPEN' as const) }
+          : s;
+      })
+    : rawShelters;
 
   // 1. Build priority locations by joining Risk + Impact + Shelter + Resources + Roads
   const priorityLocations: PriorityLocation[] = LOCATION_METAS.map((meta) => {
     const mhResult = computedMultiHazardRisks[meta.id];
-    const riskScore = mhResult ? mhResult.result.score : 65;
-    const severity = mhResult ? mhResult.result.severity : ('HIGH' as Severity);
+    let riskScore = mhResult ? mhResult.result.score : 65;
+
+    // Apply live hydromet / gauge surges if present
+    if (overrides?.riverGaugeDeltas?.[meta.id]) {
+      const surgeDelta = Math.round(overrides.riverGaugeDeltas[meta.id] * 12);
+      riskScore = Math.min(100, Math.max(0, riskScore + surgeDelta));
+    }
+
+    const severity: Severity =
+      riskScore >= 80 ? 'CRITICAL' : riskScore >= 65 ? 'HIGH' : riskScore >= 45 ? 'MODERATE' : 'LOW';
     const primaryHazard: HazardType = mhResult ? mhResult.result.dominantHazard : meta.cycloneKey ? 'CYCLONE' : 'FLOOD';
     const dominantHazard: HazardType | 'MULTI_HAZARD' = (meta.cycloneKey && meta.floodKey) ? 'MULTI_HAZARD' : primaryHazard;
 
@@ -416,10 +446,10 @@ export function aggregateCommandCenterData(): CommandCenterData {
       name: 'Drinking Water Supply',
       icon: '💧',
       required: 18500,
-      available: 13200,
-      gap: 5300,
-      coveragePct: 71,
-      status: 'SHORTAGE',
+      available: 13200 + (overrides?.resourceStocks?.['WATER'] || 0),
+      gap: Math.max(0, 18500 - (13200 + (overrides?.resourceStocks?.['WATER'] || 0))),
+      coveragePct: Math.min(100, Math.round(((13200 + (overrides?.resourceStocks?.['WATER'] || 0)) / 18500) * 100)),
+      status: (18500 - (13200 + (overrides?.resourceStocks?.['WATER'] || 0))) > 2000 ? 'SHORTAGE' : 'ADEQUATE',
       unit: 'liters/day',
     },
     {
@@ -428,10 +458,10 @@ export function aggregateCommandCenterData(): CommandCenterData {
       name: 'Ration Kits & Ready Meals',
       icon: '🍞',
       required: 14200,
-      available: 12100,
-      gap: 2100,
-      coveragePct: 85,
-      status: 'SHORTAGE',
+      available: 12100 + (overrides?.resourceStocks?.['FOOD'] || 0),
+      gap: Math.max(0, 14200 - (12100 + (overrides?.resourceStocks?.['FOOD'] || 0))),
+      coveragePct: Math.min(100, Math.round(((12100 + (overrides?.resourceStocks?.['FOOD'] || 0)) / 14200) * 100)),
+      status: (14200 - (12100 + (overrides?.resourceStocks?.['FOOD'] || 0))) > 1500 ? 'SHORTAGE' : 'ADEQUATE',
       unit: 'meal packs',
     },
     {
@@ -440,10 +470,10 @@ export function aggregateCommandCenterData(): CommandCenterData {
       name: 'Emergency Medical Units & First Aid',
       icon: '🏥',
       required: 24,
-      available: 16,
-      gap: 8,
-      coveragePct: 67,
-      status: 'CRITICAL',
+      available: 16 + (overrides?.resourceStocks?.['MEDICAL'] || 0),
+      gap: Math.max(0, 24 - (16 + (overrides?.resourceStocks?.['MEDICAL'] || 0))),
+      coveragePct: Math.min(100, Math.round(((16 + (overrides?.resourceStocks?.['MEDICAL'] || 0)) / 24) * 100)),
+      status: (24 - (16 + (overrides?.resourceStocks?.['MEDICAL'] || 0))) > 4 ? 'CRITICAL' : 'SHORTAGE',
       unit: 'mobile teams',
     },
     {
@@ -452,9 +482,9 @@ export function aggregateCommandCenterData(): CommandCenterData {
       name: 'NDRF / ODRAF Rescue Teams',
       icon: '🦺',
       required: 18,
-      available: 15,
-      gap: 3,
-      coveragePct: 83,
+      available: 15 + (overrides?.resourceStocks?.['RESCUE'] || 0),
+      gap: Math.max(0, 18 - (15 + (overrides?.resourceStocks?.['RESCUE'] || 0))),
+      coveragePct: Math.min(100, Math.round(((15 + (overrides?.resourceStocks?.['RESCUE'] || 0)) / 18) * 100)),
       status: 'ADEQUATE',
       unit: 'specialist units',
     },
@@ -464,10 +494,10 @@ export function aggregateCommandCenterData(): CommandCenterData {
       name: 'Inflatable Boats & Flood Rafts',
       icon: '🚤',
       required: 42,
-      available: 28,
-      gap: 14,
-      coveragePct: 66,
-      status: 'SHORTAGE',
+      available: 28 + (overrides?.resourceStocks?.['BOATS'] || 0),
+      gap: Math.max(0, 42 - (28 + (overrides?.resourceStocks?.['BOATS'] || 0))),
+      coveragePct: Math.min(100, Math.round(((28 + (overrides?.resourceStocks?.['BOATS'] || 0)) / 42) * 100)),
+      status: (42 - (28 + (overrides?.resourceStocks?.['BOATS'] || 0))) > 5 ? 'SHORTAGE' : 'ADEQUATE',
       unit: 'motor craft',
     },
     {

@@ -1,6 +1,8 @@
 'use client';
 
 import { Activity, Shield, RefreshCw } from 'lucide-react';
+import { LiveStatusIndicator } from '@/components/realtime/LiveStatusIndicator';
+import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import type { Role } from '@/types/roles';
 
 interface SituationAnalyticsHeaderProps {
@@ -34,23 +36,16 @@ export function SituationAnalyticsHeader({
         </p>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 flex-wrap">
+        <LiveStatusIndicator />
+
+        <ThemeToggle size="sm" />
+
         <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 dark:bg-white/[0.05] text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-white/[0.08]">
           <Shield className="w-3.5 h-3.5 text-cyan-500" />
           <span className="text-[11px] uppercase tracking-wider text-slate-400 dark:text-slate-500">Clearance:</span>
           <span className="font-semibold text-slate-800 dark:text-slate-200">{role.replace('_', ' ')}</span>
         </div>
-
-        {onRefresh && (
-          <button
-            onClick={onRefresh}
-            type="button"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.06] dark:hover:bg-white/[0.1] text-slate-700 dark:text-slate-300 transition-colors border border-slate-200 dark:border-white/[0.08]"
-          >
-            <RefreshCw className="w-3.5 h-3.5" />
-            <span>Sync</span>
-          </button>
-        )}
       </div>
     </div>
   );

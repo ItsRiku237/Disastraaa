@@ -33,15 +33,26 @@ import type {
   AnalyticsFilterState,
 } from './types';
 
+import type { CommandCenterData } from '@/lib/commandCenter/types';
+import type { DemoAlert as Alert } from '@/data/types';
+import type { CitizenReportItem } from '@/lib/reports/types';
+import type { RoadSegment } from '@/lib/roads/types';
+
 /**
  * Builds the master Situation Analytics dataset by aggregating all
  * active intelligence layers deterministically.
+ * Supports dynamic live data parameters.
  */
-export function buildSituationAnalyticsData(): SituationAnalyticsData {
-  const ccData = aggregateCommandCenterData();
-  const alerts = demoAlerts;
-  const reports = demoCitizenReports;
-  const roads = demoRoadSegments;
+export function buildSituationAnalyticsData(
+  providedCcData?: CommandCenterData,
+  customAlerts?: Alert[],
+  customReports?: CitizenReportItem[],
+  customRoads?: RoadSegment[],
+): SituationAnalyticsData {
+  const ccData = providedCcData ?? aggregateCommandCenterData();
+  const alerts = customAlerts ?? demoAlerts;
+  const reports = customReports ?? demoCitizenReports;
+  const roads = customRoads ?? demoRoadSegments;
   const locations = ccData.priorityLocations;
 
   // ── 1. Overview KPIs ────────────────────────────────────────────────────────

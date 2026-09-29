@@ -3,6 +3,8 @@
 import { Shield, Radio, Activity, RefreshCw, AlertTriangle, Layers } from 'lucide-react';
 import { Badge } from '@/components/ui';
 import { AuthorityRoleSwitcher } from '@/components/auth/AuthorityRoleSwitcher';
+import { LiveStatusIndicator } from '@/components/realtime/LiveStatusIndicator';
+import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { type Role } from '@/types/roles';
 import { getDemoUserContext } from '@/lib/auth/roles';
 
@@ -57,16 +59,16 @@ export function CommandCenterHeader({
             <span className="font-mono">SEOC FEED ONLINE</span>
           </div>
 
+          <LiveStatusIndicator />
+
           <Badge className="text-[11px] bg-amber-500/10 text-amber-300 border-amber-500/30">
             <AlertTriangle className="w-3 h-3 mr-1 text-amber-400" />
             Decision-Support Only
           </Badge>
 
-          <Badge className="text-[11px] bg-blue-500/10 text-blue-300 border-blue-500/30">
-            Demo Data
-          </Badge>
-
           <AuthorityRoleSwitcher currentRole={currentRole} onRoleChange={onRoleChange} />
+
+          <ThemeToggle />
 
           {onRefresh && (
             <button

@@ -51,6 +51,8 @@ interface ResponseOperationsDashboardProps {
 
 type ViewTab = 'map_and_zones' | 'resources' | 'shelters';
 
+import { useLiveIntelligence } from '@/context/LiveIntelligenceContext';
+
 export function ResponseOperationsDashboard({
   initialRole = ROLES.STATE_AUTHORITY,
 }: ResponseOperationsDashboardProps) {
@@ -67,8 +69,18 @@ export function ResponseOperationsDashboard({
     searchQuery: '',
   });
 
-  // Base dataset
-  const baseData: ResponseCoordinationData = useMemo(() => buildResponseCoordinationData(), []);
+  // Base dataset from Live Intelligence Stream
+  const { responseCoordinationData, overrides, refreshNow } = useLiveIntelligence();
+  const baseData = responseCoordinationData;
+
+  const liveMapDataset = useMemo(
+    () => ({
+      ...demoDataset,
+      alerts: overrides.alerts,
+      shelters: overrides.shelters,
+    }),
+    [overrides.alerts, overrides.shelters],
+  );
 
   // Mutable workflow statuses in local session state
   const [zoneStatuses, setZoneStatuses] = useState<Record<string, OperationalStatus>>(() => {
@@ -187,6 +199,7 @@ export function ResponseOperationsDashboard({
         onRoleChange={handleRoleChange}
         searchQuery={filters.searchQuery}
         onSearchChange={(q) => setFilters((prev) => ({ ...prev, searchQuery: q }))}
+        onRefresh={refreshNow}
       />
 
       {/* ── 2. Operational Overview Bar (Top Metrics) ── */}
@@ -236,7 +249,7 @@ export function ResponseOperationsDashboard({
           <div className="rounded-2xl border border-white/[0.08] overflow-hidden shadow-2xl relative">
             <div className="h-[500px] sm:h-[600px] w-full">
               <DisasterMap
-                dataset={demoDataset}
+                dataset={liveMapDataset}
                 initialLayers={RESPONSE_MAP_LAYERS}
                 className="h-full w-full"
               />

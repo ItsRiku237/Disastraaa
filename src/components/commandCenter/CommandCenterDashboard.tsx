@@ -64,6 +64,8 @@ interface CommandCenterDashboardProps {
 
 type OperationsTab = 'situation_map' | 'priority_locations' | 'field_ops' | 'logistics' | 'trends';
 
+import { useLiveIntelligence } from '@/context/LiveIntelligenceContext';
+
 export function CommandCenterDashboard({
   initialRole = ROLES.STATE_AUTHORITY,
 }: CommandCenterDashboardProps) {
@@ -80,8 +82,19 @@ export function CommandCenterDashboard({
     reportStatus: 'ALL',
   });
 
-  // Base aggregated intelligence dataset (memoized)
-  const baseData: CommandCenterData = useMemo(() => aggregateCommandCenterData(), []);
+  // Real-time Intelligence stream dataset
+  const { commandCenterData, overrides, refreshNow } = useLiveIntelligence();
+  const baseData = commandCenterData;
+
+  // Live Map Dataset incorporating real-time alerts, shelters, and roads
+  const liveMapDataset = useMemo(
+    () => ({
+      ...demoDataset,
+      alerts: overrides.alerts,
+      shelters: overrides.shelters,
+    }),
+    [overrides.alerts, overrides.shelters],
+  );
 
   // Filtered priority locations
   const filteredLocations = useMemo(
@@ -114,6 +127,7 @@ export function CommandCenterDashboard({
         onRoleChange={handleRoleChange}
         activeDisastersCount={baseData.overview.activeDisasters.length}
         highestRiskLocation={baseData.overview.highestRiskLocation}
+        onRefresh={refreshNow}
       />
 
       {/* ── 2. Key Operational Metrics (KPIs) ── */}
@@ -168,7 +182,7 @@ export function CommandCenterDashboard({
           <div className="rounded-2xl border border-white/[0.08] overflow-hidden shadow-2xl relative">
             <div className="h-[520px] sm:h-[620px] w-full">
               <DisasterMap
-                dataset={demoDataset}
+                dataset={liveMapDataset}
                 initialLayers={COMMAND_CENTER_MAP_LAYERS}
                 className="h-full w-full"
               />
@@ -225,8 +239,8 @@ export function CommandCenterDashboard({
         location={selectedLocation}
         onClose={() => setSelectedLocation(null)}
         activeAlerts={baseData.activeAlerts}
-        citizenReports={demoCitizenReports}
-        roadSegments={demoRoadSegments}
+        citizenReports={overrides.reports}
+        roadSegments={overrides.roads}
       />
     </div>
   );
