@@ -17,6 +17,7 @@ import {
   Settings,
   BarChart2,
   Sliders,
+  Bot,
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
@@ -31,6 +32,7 @@ const iconMap: Record<string, React.ElementType> = {
   LayoutDashboard,
   BarChart2,
   Sliders,
+  Bot,
   Map,
   Bell,
   FileText,

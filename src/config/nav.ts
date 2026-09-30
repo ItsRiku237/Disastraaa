@@ -54,6 +54,7 @@ export const dashboardNavGroups: NavGroup[] = [
   {
     label: 'Intelligence',
     items: [
+      { label: 'Intelligence Assistant', href: '/assistant', icon: 'Bot' },
       { label: 'Risk Analysis',     href: '/state',       icon: 'Activity' },
       { label: 'Historical',        href: '/historical',  icon: 'Clock' },
       { label: 'Planning',          href: '/planning',    icon: 'Calendar' },
