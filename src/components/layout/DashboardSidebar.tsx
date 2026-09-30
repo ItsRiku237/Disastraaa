@@ -20,6 +20,7 @@ import {
   Bot,
   ChevronLeft,
   ChevronRight,
+  AlertTriangle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Logo } from '@/components/brand/Logo';
@@ -43,6 +44,7 @@ const iconMap: Record<string, React.ElementType> = {
   Clock,
   Truck,
   Settings,
+  AlertTriangle,
 };
 
 export function DashboardSidebar() {
