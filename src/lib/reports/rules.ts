@@ -20,17 +20,20 @@ import type {
 // ── Hazard Type Resolution ───────────────────────────────────────────────────
 
 export const REPORT_TO_HAZARD_MAP: Record<ReportType, HazardType> = {
-  FLOOD:              'FLOOD',
-  WATER_LEVEL:        'FLOOD',
-  CYCLONE:            'CYCLONE',
-  BLOCKED_ROAD:       'FLOOD',
-  DAMAGED_ROAD:       'FLOOD',
-  DAMAGED_BUILDING:   'CYCLONE',
-  MEDICAL_EMERGENCY:  'FLOOD',
-  SHELTER_ISSUE:      'CYCLONE',
-  POWER_OUTAGE:       'CYCLONE',
-  LANDSLIDE:          'LANDSLIDE',
-  OTHER:              'FLOOD',
+  FLOOD:                 'FLOOD',
+  WATER_LEVEL:           'FLOOD',
+  CYCLONE:               'CYCLONE',
+  BLOCKED_ROAD:          'FLOOD',
+  DAMAGED_ROAD:          'FLOOD',
+  DAMAGED_BUILDING:      'CYCLONE',
+  INFRASTRUCTURE_DAMAGE: 'CYCLONE',
+  FIRE:                  'HEATWAVE',
+  MEDICAL_EMERGENCY:     'FLOOD',
+  MISSING_PERSON:        'FLOOD',
+  SHELTER_ISSUE:         'CYCLONE',
+  POWER_OUTAGE:          'CYCLONE',
+  LANDSLIDE:             'LANDSLIDE',
+  OTHER:                 'FLOOD',
 };
 
 // ── Report Type Metadata ─────────────────────────────────────────────────────
@@ -45,23 +48,53 @@ export const REPORT_TYPE_CONFIG: Record<
     description: 'Water entering streets, homes, or fields',
     defaultSeverity: 'HIGH',
   },
-  WATER_LEVEL: {
-    label: 'Rising Water Level',
-    icon: '📏',
-    description: 'River, canal, or reservoir water level surge',
-    defaultSeverity: 'MODERATE',
-  },
-  CYCLONE: {
-    label: 'Cyclone Wind & Damage',
-    icon: '🌀',
-    description: 'Extreme gusts, fallen structures, flying debris',
-    defaultSeverity: 'CRITICAL',
-  },
   BLOCKED_ROAD: {
     label: 'Blocked Road / Pass',
     icon: '🚧',
     description: 'Road impassable due to water, tree, or landslide',
     defaultSeverity: 'HIGH',
+  },
+  LANDSLIDE: {
+    label: 'Landslide / Rockfall',
+    icon: '⛰️',
+    description: 'Soil erosion, sliding debris on hillside roads',
+    defaultSeverity: 'HIGH',
+  },
+  FIRE: {
+    label: 'Fire Emergency',
+    icon: '🔥',
+    description: 'Active urban fire, wildfire, or severe smoke outbreak',
+    defaultSeverity: 'CRITICAL',
+  },
+  CYCLONE: {
+    label: 'Cyclone Damage & Wind',
+    icon: '🌀',
+    description: 'Extreme gusts, fallen structures, flying debris',
+    defaultSeverity: 'CRITICAL',
+  },
+  INFRASTRUCTURE_DAMAGE: {
+    label: 'Infrastructure Damage',
+    icon: '🏚️',
+    description: 'Bridge collapse, transformer down, or structural damage',
+    defaultSeverity: 'HIGH',
+  },
+  MEDICAL_EMERGENCY: {
+    label: 'Medical Emergency',
+    icon: '🚑',
+    description: 'Stranded injured persons, dialysis/oxygen rescue needs',
+    defaultSeverity: 'CRITICAL',
+  },
+  MISSING_PERSON: {
+    label: 'Missing / Stranded Person',
+    icon: '🆘',
+    description: 'Individuals trapped by floodwaters, lost, or needing rescue',
+    defaultSeverity: 'CRITICAL',
+  },
+  WATER_LEVEL: {
+    label: 'Rising Water Level',
+    icon: '📏',
+    description: 'River, canal, or reservoir water level surge',
+    defaultSeverity: 'MODERATE',
   },
   DAMAGED_ROAD: {
     label: 'Damaged Bridge / Road',
@@ -70,16 +103,10 @@ export const REPORT_TYPE_CONFIG: Record<
     defaultSeverity: 'HIGH',
   },
   DAMAGED_BUILDING: {
-    label: 'Damaged Infrastructure',
-    icon: '🏚️',
+    label: 'Building Collapse',
+    icon: '🏢',
     description: 'House collapse, roof blown off, school damage',
     defaultSeverity: 'HIGH',
-  },
-  MEDICAL_EMERGENCY: {
-    label: 'Medical Emergency / Rescue',
-    icon: '🚑',
-    description: 'Stranded injured persons, dialysis/oxygen needs',
-    defaultSeverity: 'CRITICAL',
   },
   SHELTER_ISSUE: {
     label: 'Shelter Overcrowding / Need',
@@ -93,14 +120,8 @@ export const REPORT_TYPE_CONFIG: Record<
     description: 'Uprooted electrical poles, fallen live cables',
     defaultSeverity: 'MODERATE',
   },
-  LANDSLIDE: {
-    label: 'Landslide / Rockfall',
-    icon: '⛰️',
-    description: 'Soil erosion, sliding debris on hillside roads',
-    defaultSeverity: 'HIGH',
-  },
   OTHER: {
-    label: 'Other Disaster Incident',
+    label: 'Other Incident',
     icon: '📍',
     description: 'Ground hazards not matching standard categories',
     defaultSeverity: 'MODERATE',

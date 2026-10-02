@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Menu, X, Shield } from 'lucide-react';
@@ -8,10 +8,21 @@ import { cn } from '@/lib/utils';
 import { Logo } from '@/components/brand/Logo';
 import { publicNavLinks } from '@/config/nav';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
+import { AuthorityRoleSwitcher } from '@/components/auth/AuthorityRoleSwitcher';
+import { ROLES, type Role } from '@/types/roles';
+import { ROLE_COOKIE_NAME, parseRoleFromCookie } from '@/lib/auth/roles';
 
 export function PublicNav() {
   const [open, setOpen] = useState(false);
+  const [currentRole, setCurrentRole] = useState<Role>(ROLES.CITIZEN);
   const pathname = usePathname();
+
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      const parsed = parseRoleFromCookie(document.cookie);
+      setCurrentRole(parsed);
+    }
+  }, []);
 
   const isActive = (href: string) =>
     href === '/'
@@ -48,12 +59,21 @@ export function PublicNav() {
         </div>
 
         {/* Actions: Theme Toggle + Authority login (desktop) */}
-        <div className="hidden md:flex items-center gap-2.5">
-          <ThemeToggle size="sm" showLabel={true} />
+        <div className="hidden md:flex items-center gap-2">
+          <ThemeToggle size="sm" showLabel={false} />
+
+          <AuthorityRoleSwitcher
+            currentRole={currentRole}
+            onRoleChange={(r) => {
+              setCurrentRole(r);
+              document.cookie = `${ROLE_COOKIE_NAME}=${encodeURIComponent(r)}; path=/; max-age=604800; SameSite=Lax`;
+            }}
+            compact={true}
+          />
 
           <Link
             href="/dashboard"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-accent/40 text-cyan-700 dark:text-accent hover:bg-accent/10 transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-accent text-slate-950 hover:bg-accent/90 transition-all shadow-sm"
           >
             <Shield className="w-3.5 h-3.5" />
             Command Center
@@ -95,14 +115,25 @@ export function PublicNav() {
               </Link>
             ))}
 
-            <div className="pt-2 mt-1 border-t border-slate-200 dark:border-white/[0.06] flex items-center justify-between">
+            <div className="pt-2 mt-1 border-t border-slate-200 dark:border-white/[0.06] flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-slate-500">Access Mode:</span>
+                <AuthorityRoleSwitcher
+                  currentRole={currentRole}
+                  onRoleChange={(r) => {
+                    setCurrentRole(r);
+                    document.cookie = `${ROLE_COOKIE_NAME}=${encodeURIComponent(r)}; path=/; max-age=604800; SameSite=Lax`;
+                  }}
+                  compact={true}
+                />
+              </div>
               <Link
                 href="/dashboard"
                 onClick={() => setOpen(false)}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-cyan-700 dark:text-accent hover:bg-accent/10 transition-colors"
+                className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-accent text-slate-950 hover:bg-accent/90 transition-colors"
               >
                 <Shield className="w-4 h-4" />
-                Command Center
+                Open Command Center
               </Link>
             </div>
           </div>

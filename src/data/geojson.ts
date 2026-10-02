@@ -311,11 +311,11 @@ export function cycloneLandfallToGeoJSON(
 // ── Citizen Reports → Point FeatureCollection ─────────────────────────────────
 
 export function citizenReportsToGeoJSON(
-  reports: DemoCitizenReport[],
+  reports: (DemoCitizenReport | Record<string, unknown>)[],
 ): FeatureCollection<Point, GeoJsonProperties> {
   return {
     type: 'FeatureCollection',
-    features: reports.map<Feature<Point, GeoJsonProperties>>((r) => ({
+    features: reports.map<Feature<Point, GeoJsonProperties>>((r: any) => ({
       type: 'Feature',
       id: r.id,
       geometry: {
@@ -324,14 +324,17 @@ export function citizenReportsToGeoJSON(
       },
       properties: {
         id: r.id,
-        type: r.type,
+        type: r.type ?? r.hazardType ?? 'FLOOD',
         title: r.title,
         description: r.description,
         address: r.address,
-        confirmCount: r.confirmCount,
+        confirmCount: r.confirmCount ?? 0,
         createdAt: r.createdAt,
         status: r.status,
         severity: r.severity ?? 'MODERATE',
+        evidenceCount: Array.isArray(r.evidence) ? r.evidence.length : 0,
+        hasEvidence: Array.isArray(r.evidence) && r.evidence.length > 0,
+        evidenceUrl: Array.isArray(r.evidence) && r.evidence[0]?.previewUrl ? r.evidence[0].previewUrl : null,
       },
     })),
   };

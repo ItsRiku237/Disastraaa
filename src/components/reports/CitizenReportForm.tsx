@@ -4,21 +4,19 @@
 /**
  * CitizenReportForm
  *
- * Allows citizens and field volunteers to submit ground disaster observations.
- * ⚠️  PROTOTYPE / DEMO SYSTEM
+ * Comprehensive Citizen / Field Incident Reporting workflow.
  *
- * Features:
- * - Disaster / Report Type picker
- * - Conditional Blocked Road / Infrastructure fields
- * - Hotspot / GPS / Manual Coordinate location picker
- * - Observed conditions description
- * - Severity level selection with visual indicators
- * - Local image/video evidence metadata preview (no fake uploads)
- * - Anonymous or identified reporter options
- * - Immediate deterministic preliminary automated triage feedback
+ * Workflow:
+ * 1. Select Incident Type (sensible disaster taxonomy)
+ * 2. Enter Title & Description
+ * 3. Live Geolocation ("Use My Current Location") + Interactive Map Pin picking
+ * 4. Camera Photo ("Take Photo") + Gallery Upload ("Upload Photo")
+ * 5. Reporter Identity (optional anonymous)
+ * 6. Submission to API & Real Incident creation
+ * 7. Professional Success Confirmation with "View on Live Map"
  */
 
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import {
   AlertTriangle,
   Camera,
@@ -29,11 +27,19 @@ import {
   ShieldAlert,
   User,
   X,
+  Upload,
+  Image as ImageIcon,
+  Loader2,
+  ExternalLink,
+  Compass,
+  ArrowRight,
+  Maximize2,
 } from 'lucide-react';
 import type { Severity } from '@/types';
 import type { LngLat } from '@/data/types';
 import { cn } from '@/lib/utils';
 import { EvidencePreview } from './EvidencePreview';
+import { LocationPickerMap } from '@/components/map/LocationPickerMap';
 import {
   BLOCKAGE_CONFIG,
   REPORT_TYPE_CONFIG,
@@ -44,27 +50,13 @@ import {
   type CreateReportInput,
   type ReportEvidence,
   type ReportType,
+  type CitizenReportItem,
 } from '@/lib/reports';
-
-// ── Demo Hotspot Presets for Quick Selection ─────────────────────────────────
-
-const DEMO_LOCATION_PRESETS: {
-  name: string;
-  admin: string;
-  coords: LngLat;
-}[] = [
-  { name: 'Cuttack North, Mahanadi River Bank', admin: 'Cuttack District, Odisha',   coords: [85.8900, 20.4600] },
-  { name: 'Grand Road, Puri Town',             admin: 'Puri District, Odisha',      coords: [85.8320, 19.8100] },
-  { name: 'Kendrapara Lowland Marsh',          admin: 'Kendrapara District, Odisha', coords: [86.4300, 20.4900] },
-  { name: 'Araku Valley Ghat Road, Km 42',     admin: 'Visakhapatnam District, AP',  coords: [83.2300, 18.2200] },
-  { name: 'Port Area Underpass, Vizag',        admin: 'Visakhapatnam District, AP',  coords: [83.3100, 17.7100] },
-  { name: 'Balasore Town Hall Shelter',        admin: 'Balasore District, Odisha',   coords: [86.9300, 21.4900] },
-  { name: 'Rushikulya Basin, Jagannathpur',    admin: 'Ganjam District, Odisha',     coords: [85.0400, 19.3800] },
-  { name: 'Salandi Canal Crossing, Bhadrak',   admin: 'Bhadrak District, Odisha',    coords: [86.5100, 21.0400] },
-];
+import { useLiveIntelligence } from '@/context/LiveIntelligenceContext';
 
 interface CitizenReportFormProps {
-  onSubmitReport: (input: CreateReportInput) => void;
+  onSubmitReport?: (input: CreateReportInput) => void | Promise<{ report: CitizenReportItem; incident: any }>;
+  onViewOnMap?: (report: CitizenReportItem) => void;
   onCancel?: () => void;
   initialCoords?: LngLat;
   initialAddress?: string;
@@ -73,87 +65,117 @@ interface CitizenReportFormProps {
 
 export function CitizenReportForm({
   onSubmitReport,
+  onViewOnMap,
   onCancel,
-  initialCoords,
+  initialCoords = [85.832, 19.81],
   initialAddress,
   className,
 }: CitizenReportFormProps) {
+  const { submitCitizenReport } = useLiveIntelligence();
+
   // Form State
-  const [reportType, setReportType]     = useState<ReportType>('FLOOD');
-  const [title, setTitle]               = useState('');
-  const [description, setDescription]   = useState('');
-  const [severity, setSeverity]         = useState<Severity>('HIGH');
-  const [address, setAddress]           = useState(initialAddress ?? '');
-  const [adminArea, setAdminArea]       = useState('');
-  const [coords, setCoords]             = useState<LngLat>(initialCoords ?? [85.8320, 19.8100]);
-  const [isManualCoords, setIsManualCoords] = useState(false);
-  const [manualLng, setManualLng]       = useState(String(coords[0]));
-  const [manualLat, setManualLat]       = useState(String(coords[1]));
+  const [reportType, setReportType] = useState<ReportType>('FLOOD');
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [severity, setSeverity] = useState<Severity>('HIGH');
+  const [address, setAddress] = useState(initialAddress ?? 'Puri Coastal Zone, Odisha');
+  const [adminArea, setAdminArea] = useState('Puri District, Odisha');
+  const [coords, setCoords] = useState<LngLat>(initialCoords);
 
   // Blocked Road details (conditional)
-  const [roadName, setRoadName]         = useState('');
+  const [roadName, setRoadName] = useState('');
   const [blockageType, setBlockageType] = useState<BlockageType>('FLOODING');
   const [roadSeverity, setRoadSeverity] = useState<'FULL' | 'PARTIAL'>('FULL');
 
-  // Evidence attachments (local metadata)
+  // Evidence attachments
   const [evidenceList, setEvidenceList] = useState<ReportEvidence[]>([]);
-  const [isAnonymous, setIsAnonymous]   = useState(false);
+  const [isProcessingImage, setIsProcessingImage] = useState(false);
+
+  // Reporter Identity
+  const [isAnonymous, setIsAnonymous] = useState(false);
   const [reporterName, setReporterName] = useState('');
 
-  // Status message
-  const [isSubmitted, setIsSubmitted]   = useState(false);
+  // Status & Submission State
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [submittedReport, setSubmittedReport] = useState<CitizenReportItem | null>(null);
+
+  // Hidden File Inputs
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
 
   const isRoadReport = reportType === 'BLOCKED_ROAD' || reportType === 'DAMAGED_ROAD';
 
-  // Handle Preset Location selection
-  const handleSelectPreset = (preset: typeof DEMO_LOCATION_PRESETS[0]) => {
-    setAddress(preset.name);
-    setAdminArea(preset.admin);
-    setCoords(preset.coords);
-    setManualLng(String(preset.coords[0]));
-    setManualLat(String(preset.coords[1]));
-  };
+  // Coordinate change callback from interactive location picker
+  const handleCoordinatesChange = useCallback((newCoords: LngLat, suggestedLabel?: string, suggestedAdmin?: string) => {
+    setCoords(newCoords);
+    if (suggestedLabel) setAddress(suggestedLabel);
+    if (suggestedAdmin) setAdminArea(suggestedAdmin);
+  }, []);
 
-  // Handle local file selection
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-    setErrorMessage(null);
+  // Process chosen image file (from Camera or Gallery)
+  const processImageFile = useCallback((file: File, source: 'DEVICE_CAMERA' | 'FILE_UPLOAD') => {
+    const validation = validateEvidenceFile(file);
+    if (!validation.valid) {
+      setErrorMessage(validation.error ?? 'Invalid image file.');
+      return;
+    }
 
-    if (evidenceList.length + files.length > EVIDENCE_LIMITS.MAX_FILES) {
+    if (evidenceList.length >= EVIDENCE_LIMITS.MAX_FILES) {
       setErrorMessage(`Maximum ${EVIDENCE_LIMITS.MAX_FILES} attachments allowed per report.`);
       return;
     }
 
-    const newEvidence: ReportEvidence[] = [];
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      const validation = validateEvidenceFile(file);
-      if (!validation.valid) {
-        setErrorMessage(validation.error ?? 'Invalid file selected.');
-        continue;
-      }
+    setIsProcessingImage(true);
+    const isVideo = file.type.startsWith('video/');
+    const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
 
-      const isVideo = file.type.startsWith('video');
-      const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
-
-      newEvidence.push({
-        id: `ev-local-${Date.now()}-${i}`,
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result as string;
+      const newEv: ReportEvidence = {
+        id: `ev-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
         type: isVideo ? 'VIDEO' : 'PHOTO',
         fileName: file.name,
         mimeType: file.type || (isVideo ? 'video/mp4' : 'image/jpeg'),
         fileSizeBytes: file.size,
         fileSize: `${sizeMb} MB`,
         timestamp: new Date().toISOString(),
-        source: 'FILE_UPLOAD',
+        source,
         status: 'AVAILABLE',
-        caption: `Observed at ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
-        previewUrl: URL.createObjectURL(file),
-      });
-    }
+        caption: `${source === 'DEVICE_CAMERA' ? 'Live Camera Capture' : 'Device Upload'} at ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
+        previewUrl: dataUrl,
+      };
 
-    setEvidenceList((prev) => [...prev, ...newEvidence]);
+      setEvidenceList((prev) => [...prev, newEv]);
+      setIsProcessingImage(false);
+      setErrorMessage(null);
+    };
+
+    reader.onerror = () => {
+      setErrorMessage('Failed to read photo file. Please try again.');
+      setIsProcessingImage(false);
+    };
+
+    reader.readAsDataURL(file);
+  }, [evidenceList.length]);
+
+  const handleCameraChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      processImageFile(files[0], 'DEVICE_CAMERA');
+    }
+    e.target.value = '';
+  };
+
+  const handleGalleryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      for (let i = 0; i < files.length; i++) {
+        processImageFile(files[i], 'FILE_UPLOAD');
+      }
+    }
+    e.target.value = '';
   };
 
   const handleRemoveEvidence = (id: string) => {
@@ -161,17 +183,18 @@ export function CitizenReportForm({
   };
 
   // Submission handler
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
 
-    if (!title.trim() || title.trim().length < 5) {
-      setErrorMessage('Please provide a descriptive title (at least 5 characters).');
+    // Validation
+    if (!title.trim() || title.trim().length < 3) {
+      setErrorMessage('Please provide a brief headline or title (at least 3 characters).');
       return;
     }
 
-    if (!description.trim() || description.trim().length < 15) {
-      setErrorMessage('Please describe the observed conditions in more detail (at least 15 characters).');
+    if (!description.trim() || description.trim().length < 5) {
+      setErrorMessage('Please describe the observed conditions in detail (at least 5 characters).');
       return;
     }
 
@@ -180,15 +203,9 @@ export function CitizenReportForm({
       return;
     }
 
-    let finalCoords: LngLat = coords;
-    if (isManualCoords) {
-      const lng = parseFloat(manualLng);
-      const lat = parseFloat(manualLat);
-      if (isNaN(lng) || isNaN(lat) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-        setErrorMessage('Please enter valid geographic coordinates (Latitude -90 to 90, Longitude -180 to 180).');
-        return;
-      }
-      finalCoords = [lng, lat];
+    if (!coords || isNaN(coords[0]) || isNaN(coords[1])) {
+      setErrorMessage('Please confirm a valid map pin location.');
+      return;
     }
 
     const payload: CreateReportInput = {
@@ -196,8 +213,8 @@ export function CitizenReportForm({
       title: title.trim(),
       description: description.trim(),
       address: address.trim(),
-      administrativeArea: adminArea.trim() || 'Coastal Disaster Zone',
-      coordinates: finalCoords,
+      administrativeArea: adminArea.trim() || 'Odisha Disaster Corridor',
+      coordinates: coords,
       severity,
       evidence: evidenceList,
       blockedRoadInfo: isRoadReport
@@ -208,61 +225,145 @@ export function CitizenReportForm({
             description: `${roadSeverity === 'FULL' ? 'Completely impassable' : 'Partially passable'}. ${description}`,
           }
         : undefined,
-      reporterName: isAnonymous ? 'Anonymous Citizen' : (reporterName.trim() || 'Local Citizen'),
+      reporterName: isAnonymous ? 'Anonymous Citizen' : (reporterName.trim() || 'Citizen Reporter'),
       isAnonymous,
     };
 
-    onSubmitReport(payload);
-    setIsSubmitted(true);
+    setIsSubmitting(true);
+
+    try {
+      if (onSubmitReport) {
+        const res = await onSubmitReport(payload);
+        if (res && res.report) {
+          setSubmittedReport(res.report);
+        } else {
+          // Fallback creation
+          const fallback = await submitCitizenReport(payload);
+          setSubmittedReport(fallback.report);
+        }
+      } else {
+        const res = await submitCitizenReport(payload);
+        setSubmittedReport(res.report);
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to submit report. Please try again.';
+      setErrorMessage(msg);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  if (isSubmitted) {
+  // ── SUCCESS CONFIRMATION STATE ─────────────────────────────────────────────
+  if (submittedReport) {
+    const reportCfg = REPORT_TYPE_CONFIG[submittedReport.reportType] ?? REPORT_TYPE_CONFIG.OTHER;
     return (
-      <div className="p-6 text-center space-y-4 rounded-xl bg-white dark:bg-surface-card border border-slate-200 dark:border-white/10 shadow-xl max-w-lg mx-auto">
-        <div className="w-12 h-12 rounded-full bg-emerald-500/15 text-emerald-500 flex items-center justify-center mx-auto">
-          <CheckCircle2 className="w-6 h-6" />
+      <div
+        className={cn(
+          'p-6 text-center space-y-4 rounded-xl bg-white dark:bg-surface-card border border-slate-200 dark:border-white/10 shadow-2xl max-w-lg mx-auto font-sans animate-fade-in',
+          className,
+        )}
+        role="alert"
+        aria-live="polite"
+      >
+        <div className="w-14 h-14 rounded-full bg-emerald-500/15 text-emerald-500 flex items-center justify-center mx-auto shadow-inner">
+          <CheckCircle2 className="w-7 h-7" />
         </div>
+
         <div>
-          <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
-            Report Submitted Successfully
+          <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+            Submission Confirmed
+          </span>
+          <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+            Incident Report Submitted
           </h3>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5 leading-relaxed max-w-md mx-auto">
-            Your ground observation has entered the triage pipeline. It is currently under preliminary automated review and is visible to nearby citizens for community corroboration.
+            Your ground intelligence report has been logged and synchronized with the District Command Center and emergency response teams.
           </p>
         </div>
 
-        <div className="p-3 rounded-lg bg-slate-50 dark:bg-white/5 border border-slate-200/60 dark:border-white/5 text-left text-xs space-y-1 font-mono">
-          <div className="text-[10px] text-slate-400 uppercase tracking-wider font-sans">
-            Triage Status
+        {/* Structured summary receipt */}
+        <div className="p-4 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200/80 dark:border-white/10 text-left text-xs space-y-2.5 font-sans">
+          <div className="flex items-center justify-between pb-2 border-b border-slate-200/80 dark:border-white/5">
+            <span className="text-slate-400">Incident Tracking ID:</span>
+            <span className="font-mono font-bold text-cyan-700 dark:text-accent text-sm">
+              {submittedReport.id.toUpperCase()}
+            </span>
           </div>
-          <div className="text-slate-700 dark:text-slate-300">
-            Status: <span className="text-sky-500 font-bold">UNDER REVIEW</span>
+
+          <div className="flex items-center justify-between">
+            <span className="text-slate-400">Incident Type:</span>
+            <span className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1">
+              <span>{reportCfg.icon}</span>
+              <span>{reportCfg.label}</span>
+            </span>
           </div>
-          <div className="text-slate-700 dark:text-slate-300">
-            Verification: <span className="text-amber-500">Awaiting Authority Action</span>
+
+          <div className="flex items-center justify-between">
+            <span className="text-slate-400">Location:</span>
+            <span className="font-medium text-slate-700 dark:text-slate-300 truncate max-w-[220px]" title={submittedReport.address}>
+              {submittedReport.address}
+            </span>
           </div>
-          <div className="text-[10px] text-slate-400 font-sans mt-2 pt-1 border-t border-slate-200 dark:border-white/10">
-            ⚠️ Citizen observations require official authority review before becoming verified warnings.
+
+          <div className="flex items-center justify-between font-mono text-[11px]">
+            <span className="text-slate-400 font-sans">Coordinates:</span>
+            <span className="text-slate-600 dark:text-slate-400">
+              {submittedReport.coordinates[1].toFixed(4)}°N, {submittedReport.coordinates[0].toFixed(4)}°E
+            </span>
           </div>
+
+          <div className="flex items-center justify-between">
+            <span className="text-slate-400">Submission Time:</span>
+            <span className="text-slate-600 dark:text-slate-400">
+              {new Date(submittedReport.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+            </span>
+          </div>
+
+          <div className="flex items-center justify-between pt-1">
+            <span className="text-slate-400">Initial Status:</span>
+            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+              NEW · AWAITING AUTHORITY TRIAGE
+            </span>
+          </div>
+
+          {submittedReport.evidence && submittedReport.evidence.length > 0 && (
+            <div className="flex items-center justify-between pt-1 text-[11px] text-emerald-600 dark:text-emerald-400">
+              <span className="flex items-center gap-1">
+                <Camera className="w-3.5 h-3.5" />
+                <span>Evidence Attached:</span>
+              </span>
+              <span>{submittedReport.evidence.length} photo(s) uploaded</span>
+            </div>
+          )}
         </div>
 
-        <div className="pt-2 flex justify-center gap-2">
-          {onCancel && (
-            <button
-              onClick={onCancel}
-              className="px-4 py-2 rounded-lg text-xs font-semibold bg-accent text-slate-950 hover:bg-accent/90 transition-colors"
-            >
-              Done / Return to Map
-            </button>
-          )}
+        {/* Action Buttons */}
+        <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-2.5">
           <button
+            type="button"
             onClick={() => {
-              setIsSubmitted(false);
+              if (onViewOnMap) {
+                onViewOnMap(submittedReport);
+              } else if (onCancel) {
+                onCancel();
+              }
+            }}
+            className="w-full sm:w-auto px-5 py-2.5 rounded-lg text-xs font-bold bg-accent text-slate-950 hover:bg-accent/90 shadow-md transition-all flex items-center justify-center gap-2 active:scale-98"
+          >
+            <span>View on Live Map</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setSubmittedReport(null);
               setTitle('');
               setDescription('');
               setEvidenceList([]);
             }}
-            className="px-4 py-2 rounded-lg text-xs font-medium border border-slate-300 dark:border-white/10 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
+            className="w-full sm:w-auto px-4 py-2.5 rounded-lg text-xs font-medium border border-slate-300 dark:border-white/10 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
           >
             Submit Another Report
           </button>
@@ -271,36 +372,38 @@ export function CitizenReportForm({
     );
   }
 
+  // ── MAIN INCIDENT FORM ───────────────────────────────────────────────────────
   return (
     <div
       className={cn(
-        'rounded-xl bg-white dark:bg-surface-card border border-slate-200 dark:border-white/10 shadow-2xl overflow-hidden font-sans transition-colors',
+        'rounded-2xl bg-white dark:bg-surface-card border border-slate-200 dark:border-white/10 shadow-2xl overflow-hidden font-sans transition-colors',
         className,
       )}
       role="region"
-      aria-label="Citizen Disaster Report Form"
+      aria-label="Citizen / Field Disaster Incident Reporting"
     >
       {/* ── Form Header ── */}
-      <div className="px-5 py-4 border-b border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.02] flex items-center justify-between">
+      <div className="px-5 py-4 border-b border-slate-200 dark:border-white/10 bg-slate-50/80 dark:bg-white/[0.02] flex items-center justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-lg">📢</span>
+            <span className="text-xl">📢</span>
             <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">
-              Submit Citizen Disaster Report
+              Report Disaster Incident
             </h2>
-            <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 font-mono">
-              PROTOTYPE
+            <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-accent/20 text-cyan-800 dark:text-accent border border-accent/40 font-mono">
+              CITIZEN / FIELD
             </span>
           </div>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Share observed ground conditions to assist community response and official disaster triage.
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            Submit verified ground observations, live location, and photo evidence to emergency command.
           </p>
         </div>
+
         {onCancel && (
           <button
             type="button"
             onClick={onCancel}
-            className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-white/10 transition-colors"
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-white/10 transition-colors"
             aria-label="Close report form"
           >
             <X className="w-4 h-4" />
@@ -309,22 +412,23 @@ export function CitizenReportForm({
       </div>
 
       {/* ── Form Body ── */}
-      <form onSubmit={handleSubmit} className="p-5 space-y-4 max-h-[75vh] overflow-y-auto">
+      <form onSubmit={handleSubmit} className="p-5 space-y-4 max-h-[78vh] overflow-y-auto">
         {errorMessage && (
-          <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs flex items-center gap-2">
+          <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs flex items-center gap-2.5 animate-fade-in">
             <AlertTriangle className="w-4 h-4 flex-shrink-0" />
-            <span>{errorMessage}</span>
+            <span className="font-medium">{errorMessage}</span>
           </div>
         )}
 
         {/* 1. Incident Type */}
         <div>
-          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-            Disaster / Hazard Category <span className="text-rose-500">*</span>
+          <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">
+            1. Disaster / Incident Type <span className="text-rose-500">*</span>
           </label>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {Object.entries(REPORT_TYPES).map(([key, val]) => {
               const cfg = REPORT_TYPE_CONFIG[val];
+              if (!cfg) return null;
               const isSelected = reportType === val;
               return (
                 <button
@@ -335,15 +439,18 @@ export function CitizenReportForm({
                     setSeverity(cfg.defaultSeverity);
                   }}
                   className={cn(
-                    'p-2 rounded-lg border text-left flex items-start gap-2 transition-all',
+                    'p-2.5 rounded-xl border text-left flex items-start gap-2.5 transition-all',
                     isSelected
-                      ? 'border-accent bg-accent/10 text-slate-900 dark:text-slate-100 ring-1 ring-accent'
-                      : 'border-slate-200 dark:border-white/10 hover:bg-slate-100/60 dark:hover:bg-white/5 text-slate-600 dark:text-slate-400',
+                      ? 'border-accent bg-accent/15 text-slate-900 dark:text-slate-100 ring-2 ring-accent shadow-sm'
+                      : 'border-slate-200 dark:border-white/10 hover:bg-slate-100/70 dark:hover:bg-white/5 text-slate-600 dark:text-slate-400',
                   )}
                 >
-                  <span className="text-base">{cfg.icon}</span>
+                  <span className="text-xl flex-shrink-0">{cfg.icon}</span>
                   <div className="min-w-0">
-                    <div className="text-[11px] font-semibold truncate">{cfg.label}</div>
+                    <div className="text-xs font-bold truncate">{cfg.label}</div>
+                    <div className="text-[10px] text-slate-400 dark:text-slate-500 truncate mt-0.5">
+                      {cfg.description}
+                    </div>
                   </div>
                 </button>
               );
@@ -351,30 +458,30 @@ export function CitizenReportForm({
           </div>
         </div>
 
-        {/* 2. Blocked Road Specific Fields */}
+        {/* 2. Blocked Road Details (Conditional) */}
         {isRoadReport && (
-          <div className="p-3.5 rounded-lg bg-amber-500/5 border border-amber-500/20 space-y-3">
-            <div className="flex items-center gap-1.5 text-xs font-bold text-amber-600 dark:text-amber-400">
+          <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/25 space-y-3">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-amber-700 dark:text-amber-400">
               <span>🚧</span>
-              <span>Road Blockage Intelligence Details</span>
+              <span>Road Blockage Field Details</span>
             </div>
 
-            <div className="grid sm:grid-cols-2 gap-3">
+            <div className="grid sm:grid-cols-2 gap-2.5">
               <div>
-                <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
-                  Road / Highway Name
+                <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-300 mb-1">
+                  Highway / Road Name
                 </label>
                 <input
                   type="text"
                   value={roadName}
                   onChange={(e) => setRoadName(e.target.value)}
-                  placeholder="e.g. NH-16 / Grand Road"
+                  placeholder="e.g. NH-16 / Grand Road Km 4"
                   className="w-full text-xs px-3 py-2 rounded-lg bg-white dark:bg-surface-base border border-slate-200 dark:border-white/10 focus:outline-none focus:ring-1 focus:ring-accent text-slate-900 dark:text-slate-100"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
+                <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-300 mb-1">
                   Blockage Cause
                 </label>
                 <select
@@ -392,17 +499,17 @@ export function CitizenReportForm({
             </div>
 
             <div>
-              <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
-                Passability Extent
+              <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-300 mb-1">
+                Passability Level
               </label>
               <div className="flex gap-2">
                 <button
                   type="button"
                   onClick={() => setRoadSeverity('FULL')}
                   className={cn(
-                    'flex-1 py-1.5 text-xs font-semibold rounded border transition-colors',
+                    'flex-1 py-1.5 text-xs font-semibold rounded-lg border transition-colors',
                     roadSeverity === 'FULL'
-                      ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/40'
+                      ? 'bg-rose-500/20 text-rose-700 dark:text-rose-400 border-rose-500/50'
                       : 'border-slate-200 dark:border-white/10 text-slate-500',
                   )}
                 >
@@ -412,13 +519,13 @@ export function CitizenReportForm({
                   type="button"
                   onClick={() => setRoadSeverity('PARTIAL')}
                   className={cn(
-                    'flex-1 py-1.5 text-xs font-semibold rounded border transition-colors',
+                    'flex-1 py-1.5 text-xs font-semibold rounded-lg border transition-colors',
                     roadSeverity === 'PARTIAL'
-                      ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/40'
+                      ? 'bg-amber-500/20 text-amber-700 dark:text-amber-400 border-amber-500/50'
                       : 'border-slate-200 dark:border-white/10 text-slate-500',
                   )}
                 >
-                  ⚠️ Partially Blocked (One-way / 4x4 only)
+                  ⚠️ Partially Blocked (4x4 or Emergency Only)
                 </button>
               </div>
             </div>
@@ -428,131 +535,85 @@ export function CitizenReportForm({
         {/* 3. Title & Description */}
         <div className="space-y-3">
           <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-              Headline / Summary <span className="text-rose-500">*</span>
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">
+              2. Incident Headline <span className="text-rose-500">*</span>
             </label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. Water 1m deep near hospital entrance / fallen transformer"
+              placeholder="e.g. Water 1m deep near hospital / tree blocking highway"
               maxLength={120}
-              className="w-full text-xs px-3 py-2 rounded-lg bg-slate-50 dark:bg-surface-base border border-slate-200 dark:border-white/10 focus:outline-none focus:ring-1 focus:ring-accent text-slate-900 dark:text-slate-100"
+              className="w-full text-xs px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-surface-base border border-slate-200 dark:border-white/10 focus:outline-none focus:ring-1 focus:ring-accent text-slate-900 dark:text-slate-100"
             />
           </div>
 
           <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                Observed Conditions & Details <span className="text-rose-500">*</span>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                3. Observed Conditions & Description <span className="text-rose-500">*</span>
               </label>
-              <span className="text-[10px] text-slate-400">
-                {description.length}/500 chars
-              </span>
+              <span className="text-[10px] text-slate-400">{description.length}/500</span>
             </div>
             <textarea
               rows={3}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Describe depth of water, number of people affected, urgent rescue requirements, electrical risks, structural damage..."
+              placeholder="Describe what you see: water depth, affected people, injured individuals, blocked culverts, live wire hazards..."
               maxLength={500}
-              className="w-full text-xs p-3 rounded-lg bg-slate-50 dark:bg-surface-base border border-slate-200 dark:border-white/10 focus:outline-none focus:ring-1 focus:ring-accent text-slate-900 dark:text-slate-100 resize-none leading-relaxed"
+              className="w-full text-xs p-3.5 rounded-xl bg-slate-50 dark:bg-surface-base border border-slate-200 dark:border-white/10 focus:outline-none focus:ring-1 focus:ring-accent text-slate-900 dark:text-slate-100 resize-none leading-relaxed"
             />
           </div>
         </div>
 
-        {/* 4. Location Details */}
+        {/* 4. Live Geolocation & Interactive Map Pin Confirmation */}
         <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1">
-              <MapPin className="w-3.5 h-3.5 text-accent" />
-              <span>Location / Landmark</span> <span className="text-rose-500">*</span>
-            </label>
-            <button
-              type="button"
-              onClick={() => setIsManualCoords((v) => !v)}
-              className="text-[10px] text-accent hover:underline"
-            >
-              {isManualCoords ? 'Use Presets' : 'Specify Lat/Lng'}
-            </button>
-          </div>
+          <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+            4. Live Location & Confirmed Map Pin <span className="text-rose-500">*</span>
+          </label>
 
-          {/* Quick presets */}
-          {!isManualCoords && (
+          {/* Interactive Map Picker with Geolocation API */}
+          <LocationPickerMap
+            coordinates={coords}
+            onCoordinatesChange={handleCoordinatesChange}
+          />
+
+          {/* Landmark & Administrative area fields */}
+          <div className="grid sm:grid-cols-2 gap-2 pt-1">
             <div>
-              <div className="text-[10px] text-slate-400 mb-1">Quick Select Demo Disaster Hotspots:</div>
-              <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto p-1 bg-slate-50 dark:bg-white/[0.02] rounded border border-slate-200/60 dark:border-white/5">
-                {DEMO_LOCATION_PRESETS.map((p) => (
-                  <button
-                    type="button"
-                    key={p.name}
-                    onClick={() => handleSelectPreset(p)}
-                    className={cn(
-                      'text-[10px] px-2 py-0.5 rounded border transition-colors truncate max-w-[200px]',
-                      address === p.name
-                        ? 'bg-accent/15 border-accent text-cyan-800 dark:text-accent font-semibold'
-                        : 'border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-white/5',
-                    )}
-                  >
-                    {p.name.split(',')[0]}
-                  </button>
-                ))}
-              </div>
+              <label className="block text-[10px] text-slate-500 mb-0.5">Location / Landmark Name</label>
+              <input
+                type="text"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                placeholder="Specific street, village, or landmark"
+                className="w-full text-xs px-3 py-2 rounded-lg bg-slate-50 dark:bg-surface-base border border-slate-200 dark:border-white/10 focus:outline-none focus:ring-1 focus:ring-accent text-slate-900 dark:text-slate-100"
+              />
             </div>
-          )}
 
-          <div className="grid sm:grid-cols-2 gap-2">
-            <input
-              type="text"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              placeholder="Specific street, landmark, or village"
-              className="text-xs px-3 py-2 rounded-lg bg-slate-50 dark:bg-surface-base border border-slate-200 dark:border-white/10 focus:outline-none focus:ring-1 focus:ring-accent text-slate-900 dark:text-slate-100"
-            />
-            <input
-              type="text"
-              value={adminArea}
-              onChange={(e) => setAdminArea(e.target.value)}
-              placeholder="District / State (e.g. Puri District, Odisha)"
-              className="text-xs px-3 py-2 rounded-lg bg-slate-50 dark:bg-surface-base border border-slate-200 dark:border-white/10 focus:outline-none focus:ring-1 focus:ring-accent text-slate-900 dark:text-slate-100"
-            />
+            <div>
+              <label className="block text-[10px] text-slate-500 mb-0.5">District / Region</label>
+              <input
+                type="text"
+                value={adminArea}
+                onChange={(e) => setAdminArea(e.target.value)}
+                placeholder="e.g. Puri District, Odisha"
+                className="w-full text-xs px-3 py-2 rounded-lg bg-slate-50 dark:bg-surface-base border border-slate-200 dark:border-white/10 focus:outline-none focus:ring-1 focus:ring-accent text-slate-900 dark:text-slate-100"
+              />
+            </div>
           </div>
-
-          {/* Coordinate manual input */}
-          {isManualCoords && (
-            <div className="grid grid-cols-2 gap-2 p-2 rounded bg-slate-100/70 dark:bg-white/5 border border-slate-200 dark:border-white/10">
-              <div>
-                <label className="text-[10px] text-slate-400 block mb-0.5">Longitude</label>
-                <input
-                  type="text"
-                  value={manualLng}
-                  onChange={(e) => setManualLng(e.target.value)}
-                  className="w-full text-xs px-2 py-1 rounded bg-white dark:bg-surface-base border border-slate-200 dark:border-white/10 text-slate-900 dark:text-slate-100 font-mono"
-                />
-              </div>
-              <div>
-                <label className="text-[10px] text-slate-400 block mb-0.5">Latitude</label>
-                <input
-                  type="text"
-                  value={manualLat}
-                  onChange={(e) => setManualLat(e.target.value)}
-                  className="w-full text-xs px-2 py-1 rounded bg-white dark:bg-surface-base border border-slate-200 dark:border-white/10 text-slate-900 dark:text-slate-100 font-mono"
-                />
-              </div>
-            </div>
-          )}
         </div>
 
-        {/* 5. Severity Level */}
+        {/* 5. Severity Selection */}
         <div>
-          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-            Estimated Severity Level
+          <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">
+            5. Estimated Severity Level
           </label>
           <div className="grid grid-cols-4 gap-2">
             {[
-              { level: 'LOW',      label: 'Low',      color: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30' },
+              { level: 'LOW', label: 'Low', color: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30' },
               { level: 'MODERATE', label: 'Moderate', color: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30' },
-              { level: 'HIGH',     label: 'High',     color: 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/30' },
+              { level: 'HIGH', label: 'High', color: 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/30' },
               { level: 'CRITICAL', label: 'Critical', color: 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/40' },
             ].map((s) => (
               <button
@@ -560,9 +621,9 @@ export function CitizenReportForm({
                 key={s.level}
                 onClick={() => setSeverity(s.level as Severity)}
                 className={cn(
-                  'py-2 rounded-lg text-xs font-bold border transition-all text-center',
+                  'py-2 rounded-xl text-xs font-bold border transition-all text-center',
                   severity === s.level
-                    ? `${s.color} ring-2 ring-offset-1 ring-current`
+                    ? `${s.color} ring-2 ring-offset-1 ring-current shadow-sm`
                     : 'border-slate-200 dark:border-white/10 text-slate-500 hover:bg-slate-100 dark:hover:bg-white/5',
                 )}
               >
@@ -572,57 +633,88 @@ export function CitizenReportForm({
           </div>
         </div>
 
-        {/* 6. Evidence Attachments */}
-        <div>
-          <div className="flex items-center justify-between mb-1.5">
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+        {/* 6. Camera Photo & Gallery Upload */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
               <Camera className="w-3.5 h-3.5 text-accent" />
-              <span>Evidence Attachments (Photos / Videos)</span>
+              <span>6. Incident Evidence Photos</span>
             </label>
-            <span className="text-[10px] text-slate-400">Optional · Local preview</span>
+            <span className="text-[10px] text-slate-400">JPG, PNG, WEBP · Max 10MB</span>
           </div>
 
-          <div className="space-y-2">
-            <label className="flex flex-col items-center justify-center p-3 border-2 border-dashed border-slate-200 dark:border-white/10 hover:border-accent/50 rounded-lg cursor-pointer bg-slate-50 dark:bg-white/[0.02] transition-colors">
-              <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
-                <Camera className="w-4 h-4 text-accent" />
-                <span className="font-semibold">Select files from device</span>
+          {/* Dual Action Buttons: Take Photo & Upload Photo */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            {/* Take Photo Button (Direct device camera capture on mobile) */}
+            <button
+              type="button"
+              onClick={() => cameraInputRef.current?.click()}
+              disabled={isProcessingImage}
+              className="flex items-center justify-center gap-2 p-3 rounded-xl border border-accent/40 bg-accent/10 hover:bg-accent/20 text-slate-800 dark:text-accent font-semibold text-xs transition-colors"
+            >
+              <Camera className="w-4 h-4 text-accent" />
+              <span>Take Photo (Camera)</span>
+            </button>
+
+            {/* Upload Photo Button (Device Gallery / Filesystem) */}
+            <button
+              type="button"
+              onClick={() => galleryInputRef.current?.click()}
+              disabled={isProcessingImage}
+              className="flex items-center justify-center gap-2 p-3 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] hover:bg-slate-100 dark:hover:bg-white/[0.08] text-slate-700 dark:text-slate-300 font-semibold text-xs transition-colors"
+            >
+              <Upload className="w-4 h-4 text-slate-400" />
+              <span>Upload from Gallery</span>
+            </button>
+          </div>
+
+          {/* Hidden Inputs */}
+          <input
+            ref={cameraInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            onChange={handleCameraChange}
+            className="hidden"
+          />
+          <input
+            ref={galleryInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif"
+            multiple
+            onChange={handleGalleryChange}
+            className="hidden"
+          />
+
+          {isProcessingImage && (
+            <div className="p-3 text-center text-xs text-accent flex items-center justify-center gap-2">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span>Processing photo evidence...</span>
+            </div>
+          )}
+
+          {/* Evidence Previews List */}
+          {evidenceList.length > 0 && (
+            <div className="space-y-2 pt-1">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {evidenceList.map((ev) => (
+                  <EvidencePreview
+                    key={ev.id}
+                    evidence={ev}
+                    size="sm"
+                    onRemove={() => handleRemoveEvidence(ev.id)}
+                  />
+                ))}
               </div>
-              <p className="text-[10px] text-slate-400 mt-0.5">
-                Supports JPG, PNG, MP4. Client-side local preview.
+              <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
+                ✓ {evidenceList.length} photo evidence attachment(s) confirmed and ready for submission.
               </p>
-              <input
-                type="file"
-                multiple
-                accept="image/*,video/*"
-                onChange={handleFileChange}
-                className="hidden"
-              />
-            </label>
-
-            {/* Evidence previews */}
-            {evidenceList.length > 0 && (
-              <div className="space-y-2">
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {evidenceList.map((ev) => (
-                    <EvidencePreview
-                      key={ev.id}
-                      evidence={ev}
-                      size="sm"
-                      onRemove={() => handleRemoveEvidence(ev.id)}
-                    />
-                  ))}
-                </div>
-                <p className="text-[10px] text-slate-500 italic">
-                  Attached for prototype review. Ready for secure cloud object storage in production.
-                </p>
-              </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
         {/* 7. Reporter Identity */}
-        <div className="p-3 rounded-lg bg-slate-50 dark:bg-white/[0.02] border border-slate-200/60 dark:border-white/5 space-y-2">
+        <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-white/[0.02] border border-slate-200/80 dark:border-white/5 space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
               <User className="w-3.5 h-3.5 text-slate-400" />
@@ -644,37 +736,49 @@ export function CitizenReportForm({
               type="text"
               value={reporterName}
               onChange={(e) => setReporterName(e.target.value)}
-              placeholder="Your full name or callsign (e.g. Anand Sahu, Local Ward Volunteer)"
-              className="w-full text-xs px-3 py-1.5 rounded bg-white dark:bg-surface-base border border-slate-200 dark:border-white/10 focus:outline-none focus:ring-1 focus:ring-accent text-slate-900 dark:text-slate-100"
+              placeholder="Your name or organization (e.g. Ramesh Kumar, Local Volunteer)"
+              className="w-full text-xs px-3 py-2 rounded-lg bg-white dark:bg-surface-base border border-slate-200 dark:border-white/10 focus:outline-none focus:ring-1 focus:ring-accent text-slate-900 dark:text-slate-100"
             />
           )}
         </div>
 
-        {/* Prototype Transparency Notice */}
-        <div className="p-2.5 rounded-lg bg-slate-100 dark:bg-white/5 text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed flex items-start gap-2">
+        {/* Decision Support Safety Notice */}
+        <div className="p-3 rounded-xl bg-slate-100 dark:bg-white/5 text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed flex items-start gap-2">
           <ShieldAlert className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
           <span>
-            <strong>Decision Support Safety:</strong> Submitted reports undergo deterministic preliminary scoring and community confirmation. Only authorized emergency management officials can transition a report to <strong>VERIFIED</strong> status.
+            <strong>Official Triage Protocol:</strong> Submitted ground observations undergo preliminary scoring and are dispatched to the District Operations Command Center for verification and response assignment.
           </span>
         </div>
 
-        {/* Action Buttons */}
-        <div className="pt-2 flex items-center justify-end gap-2 border-t border-slate-200 dark:border-white/10">
+        {/* Submit Bar */}
+        <div className="pt-2 flex items-center justify-end gap-2.5 border-t border-slate-200 dark:border-white/10">
           {onCancel && (
             <button
               type="button"
               onClick={onCancel}
-              className="px-4 py-2 rounded-lg text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
+              disabled={isSubmitting}
+              className="px-4 py-2 rounded-xl text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
             >
               Cancel
             </button>
           )}
+
           <button
             type="submit"
-            className="px-5 py-2 rounded-lg text-xs font-bold bg-accent text-slate-950 hover:bg-accent/90 transition-all flex items-center gap-1.5 shadow-md shadow-accent/10 active:scale-98"
+            disabled={isSubmitting}
+            className="px-6 py-2.5 rounded-xl text-xs font-bold bg-accent text-slate-950 hover:bg-accent/90 transition-all flex items-center gap-2 shadow-lg shadow-accent/15 active:scale-98 disabled:opacity-60"
           >
-            <Send className="w-3.5 h-3.5" />
-            <span>Submit Ground Report</span>
+            {isSubmitting ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <span>Submitting Incident...</span>
+              </>
+            ) : (
+              <>
+                <Send className="w-3.5 h-3.5" />
+                <span>Submit Incident Report</span>
+              </>
+            )}
           </button>
         </div>
       </form>

@@ -18,8 +18,9 @@ export function MapPageClient() {
       ...demoDataset,
       alerts: overrides.alerts,
       shelters: overrides.shelters,
+      citizenReports: overrides.reports,
     }),
-    [overrides.alerts, overrides.shelters],
+    [overrides.alerts, overrides.shelters, overrides.reports],
   );
 
   return (

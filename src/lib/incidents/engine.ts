@@ -21,8 +21,49 @@ import type {
   IncidentAction,
   ActionStatus,
 } from './types';
-import { VALID_TRANSITIONS, INCIDENT_STATUSES } from './types';
+import { VALID_TRANSITIONS, INCIDENT_STATUSES, type IncidentType } from './types';
 import type { Role } from '@/types/roles';
+
+// ── Report → Incident Mappers ────────────────────────────────────────────────
+
+export function mapReportTypeToIncidentType(reportType: string): IncidentType {
+  switch (reportType) {
+    case 'FLOOD':
+    case 'WATER_LEVEL':
+      return 'FLOOD';
+    case 'CYCLONE':
+      return 'CYCLONE';
+    case 'BLOCKED_ROAD':
+    case 'DAMAGED_ROAD':
+      return 'ROAD_BLOCKAGE';
+    case 'DAMAGED_BUILDING':
+    case 'INFRASTRUCTURE_DAMAGE':
+    case 'POWER_OUTAGE':
+      return 'INFRASTRUCTURE_DAMAGE';
+    case 'MEDICAL_EMERGENCY':
+      return 'MEDICAL_EMERGENCY';
+    case 'SHELTER_ISSUE':
+      return 'SHELTER_OVERLOAD';
+    case 'LANDSLIDE':
+      return 'LANDSLIDE';
+    case 'FIRE':
+      return 'FIRE';
+    case 'MISSING_PERSON':
+      return 'MISSING_PERSON';
+    default:
+      return 'OTHER';
+  }
+}
+
+export function mapReportSeverityToIncidentSeverity(severity: string): IncidentSeverity {
+  switch (severity) {
+    case 'CRITICAL': return 'CRITICAL';
+    case 'HIGH':     return 'HIGH';
+    case 'MODERATE': return 'MEDIUM';
+    case 'LOW':      return 'LOW';
+    default:         return 'MEDIUM';
+  }
+}
 
 // ── ID helpers ────────────────────────────────────────────────────────────────
 
@@ -157,9 +198,10 @@ export function createIncident(input: CreateIncidentInput): Incident {
     auditLog:         [aud],
     relatedAlertIds:  input.relatedAlertIds ?? [],
     relatedReportIds: input.relatedReportIds ?? [],
-    relatedRoadIds:   [],
-    relatedShelterIds:[],
+    relatedRoadIds:   input.relatedRoadIds ?? [],
+    relatedShelterIds:input.relatedShelterIds ?? [],
     affectedPopulation: input.affectedPopulation,
+    evidence:         input.evidence ?? [],
   };
 }
 

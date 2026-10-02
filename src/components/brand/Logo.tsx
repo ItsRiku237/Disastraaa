@@ -19,7 +19,7 @@ const sizeMap = {
  * Renders the platform logo mark + wordmark.
  * Brand name is pulled from config — never hard-coded here.
  */
-export function Logo({ size = 'md', showName = true, href = '/', className }: LogoProps) {
+export function Logo({ size = 'md', showName = true, href = '/map', className }: LogoProps) {
   const sz = sizeMap[size];
 
   const mark = (

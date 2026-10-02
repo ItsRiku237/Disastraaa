@@ -138,6 +138,11 @@ export function IncidentList({
                   {TEAM_LABEL[inc.assignedTeam.team]}
                 </span>
               )}
+              {inc.evidence && inc.evidence.length > 0 && (
+                <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                  📷 {inc.evidence.length} Photo{inc.evidence.length > 1 ? 's' : ''}
+                </span>
+              )}
             </div>
           </button>
         );

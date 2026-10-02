@@ -214,6 +214,15 @@ export function DisasterMap({ dataset, className, center, zoom, initialLayers }:
     prevLayers.current = layers;
   }, [layers]);
 
+  // ── Sync citizen reports dynamically to map source ────────────────────────
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    if (dataset.citizenReports) {
+      addCitizenReportLayers(map, citizenReportsToGeoJSON(dataset.citizenReports));
+    }
+  }, [dataset.citizenReports]);
+
   // ── Map ready ────────────────────────────────────────────────────────────
   const handleMapReady = useCallback(async (map: MLMap) => {
     mapRef.current = map;
@@ -337,9 +346,10 @@ export function DisasterMap({ dataset, className, center, zoom, initialLayers }:
         setActivePanel(null);
         setActiveRoad(null);
         const reportId = String(props.id ?? '');
-        const found = demoCitizenReports.find((r) => r.id === reportId);
+        const allReports = (dataset.citizenReports as unknown as CitizenReportItem[]) || demoCitizenReports;
+        const found = allReports.find((r) => r.id === reportId) || demoCitizenReports.find((r) => r.id === reportId);
         if (found) {
-          setActiveReport(found);
+          setActiveReport(found as CitizenReportItem);
           return;
         }
       }
@@ -839,13 +849,22 @@ export function DisasterMap({ dataset, className, center, zoom, initialLayers }:
 
       {/* Citizen Report Form Modal */}
       {isReportFormOpen && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 pointer-events-auto animate-fade-in">
-          <div className="w-full max-w-xl max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 pointer-events-auto animate-fade-in">
+          <div className="w-full max-w-2xl max-h-[92vh] overflow-y-auto">
             <CitizenReportForm
-              onSubmitReport={(input) => {
-                const newReport = createCitizenReport(input, dataset);
-                setActiveReport(newReport);
+              onViewOnMap={(report) => {
                 setIsReportFormOpen(false);
+                setLayers((prev) =>
+                  prev.map((l) => (l.id === 'reports' ? { ...l, enabled: true } : l)),
+                );
+                if (mapRef.current) {
+                  mapRef.current.flyTo({
+                    center: report.coordinates,
+                    zoom: 13,
+                    speed: 1.2,
+                  });
+                }
+                setActiveReport(report);
               }}
               onCancel={() => setIsReportFormOpen(false)}
             />

@@ -33,10 +33,13 @@ export const INCIDENT_TYPE_ICON: Record<IncidentType, string> = {
   ROAD_BLOCKAGE:         '🚧',
   SHELTER_OVERLOAD:      '⛺',
   RESOURCE_SHORTAGE:     '📦',
-  MEDICAL_EMERGENCY:     '🏥',
-  INFRASTRUCTURE_DAMAGE: '⚡',
+  MEDICAL_EMERGENCY:     '🚑',
+  INFRASTRUCTURE_DAMAGE: '🏚️',
   CITIZEN_REPORT:        '📍',
   EVACUATION:            '🚶',
+  LANDSLIDE:             '⛰️',
+  FIRE:                  '🔥',
+  MISSING_PERSON:        '🆘',
   OTHER:                 '⚠️',
 };
 

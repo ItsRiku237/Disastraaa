@@ -85,4 +85,8 @@ export interface LiveIntelligenceContextType extends LiveIntelligenceState {
   openDrawer: () => void;
   closeDrawer: () => void;
   setIsDrawerOpen: (open: boolean) => void;
+  submitCitizenReport: (input: import('@/lib/reports').CreateReportInput) => Promise<{
+    report: CitizenReportItem;
+    incident: import('@/lib/incidents').Incident;
+  }>;
 }

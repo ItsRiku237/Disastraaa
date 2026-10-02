@@ -216,9 +216,13 @@ export function blockedRoadPopupHTML(props: Record<string, unknown>): string {
 // ── Citizen Report popup ──────────────────────────────────────────────────────
 
 const REPORT_STATUS_LABEL: Record<string, string> = {
-  VERIFIED:            '✅ Verified',
-  COMMUNITY_CONFIRMED: '👥 Community Confirmed',
+  NEW:                 '🆕 New Incident',
   PENDING:             '⏳ Pending Review',
+  UNDER_REVIEW:        '🔍 Under Review',
+  COMMUNITY_CONFIRMED: '👥 Community Confirmed',
+  VERIFIED:            '✅ Verified Ground Intelligence',
+  ESCALATED:           '⬆️ Escalated',
+  REJECTED:            '❌ Rejected',
 };
 
 export function citizenReportPopupHTML(props: Record<string, unknown>): string {
@@ -227,16 +231,30 @@ export function citizenReportPopupHTML(props: Record<string, unknown>): string {
         day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
       })
     : null;
+  const hasEvidence = Boolean(props.hasEvidence || (Number(props.evidenceCount) > 0));
+  const evidenceUrl = props.evidenceUrl ? String(props.evidenceUrl) : null;
+  const statusStr = String(props.status ?? 'NEW');
+
   return `
     <div>
       <div style="font-size:11px;color:#64748B;margin-bottom:4px;">
-        ${HAZARD_LABEL[String(props.type)] ?? '📍 Report'} · ${REPORT_STATUS_LABEL[String(props.status)] ?? props.status}
+        ${HAZARD_LABEL[String(props.type)] ?? '📍 Report'} · ${REPORT_STATUS_LABEL[statusStr] ?? statusStr}
       </div>
-      <div style="font-weight:600;font-size:14px;margin-bottom:4px;">${props.title}</div>
-      <div style="font-size:12px;color:#94A3B8;margin-bottom:8px;">${props.address}</div>
-      <div style="font-size:12px;color:#CBD5E1;line-height:1.5;margin-bottom:6px;">${props.description}</div>
+      <div style="font-weight:600;font-size:14px;margin-bottom:4px;color:#0F172A;">${props.title}</div>
+      <div style="font-size:12px;color:#64748B;margin-bottom:6px;">📍 ${props.address}</div>
+      <div style="font-size:12px;color:#334155;line-height:1.5;margin-bottom:6px;">${props.description}</div>
+      ${hasEvidence ? `
+        <div style="display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:5px;background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.3);color:#059669;font-size:11px;font-weight:600;margin-bottom:6px;">
+          📷 Photo Evidence Attached (${props.evidenceCount || 1})
+        </div>
+      ` : ''}
+      ${evidenceUrl ? `
+        <div style="margin-bottom:8px;border-radius:6px;overflow:hidden;max-height:120px;">
+          <img src="${evidenceUrl}" style="width:100%;height:100px;object-fit:cover;border-radius:6px;" alt="Incident Evidence" />
+        </div>
+      ` : ''}
       ${row('Reported', created)}
-      ${row('Confirmations', String(props.confirmCount))}
+      ${row('Confirmations', String(props.confirmCount ?? 0))}
       ${demoTag()}
     </div>`;
 }

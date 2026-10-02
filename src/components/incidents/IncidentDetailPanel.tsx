@@ -9,10 +9,12 @@
  */
 
 import { useState, useCallback } from 'react';
+import Link from 'next/link';
 import {
   X, MapPin, Clock, Users, Shield, ChevronDown, ChevronUp,
-  CheckCircle2, Zap, FileText, TrendingUp,
+  CheckCircle2, Zap, FileText, TrendingUp, Camera, ExternalLink, ArrowRight,
 } from 'lucide-react';
+import { EvidencePreview } from '@/components/reports/EvidencePreview';
 import { cn, timeAgo, formatNumber } from '@/lib/utils';
 import {
   INCIDENT_STATUS_CONFIG,
@@ -294,22 +296,88 @@ export function IncidentDetailPanel({
 
         {/* Location + Meta */}
         <div className="grid grid-cols-2 gap-2 text-xs">
-          <div className="p-2 rounded-lg bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/10">
+          <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/10">
             <div className="text-[9px] font-bold uppercase text-slate-400 mb-1">Location</div>
             <div className="flex items-center gap-1 text-slate-700 dark:text-slate-300 font-medium">
-              <MapPin className="w-3 h-3 text-accent" />
+              <MapPin className="w-3 h-3 text-accent flex-shrink-0" />
               <span className="line-clamp-1">{incident.locationName}</span>
             </div>
             {incident.affectedArea && <div className="text-[10px] text-slate-500 mt-0.5">{incident.affectedArea}</div>}
+            {incident.coordinates && (
+              <div className="mt-1 pt-1 border-t border-slate-200/60 dark:border-white/5 flex items-center justify-between">
+                <span className="text-[9px] font-mono text-slate-500">
+                  {incident.coordinates[1].toFixed(4)}°N, {incident.coordinates[0].toFixed(4)}°E
+                </span>
+                <Link
+                  href="/map"
+                  className="text-[9px] text-accent hover:underline flex items-center gap-0.5"
+                >
+                  <span>Map</span>
+                  <ExternalLink className="w-2.5 h-2.5" />
+                </Link>
+              </div>
+            )}
           </div>
-          <div className="p-2 rounded-lg bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/10">
-            <div className="text-[9px] font-bold uppercase text-slate-400 mb-1">Source</div>
+          <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/10">
+            <div className="text-[9px] font-bold uppercase text-slate-400 mb-1">Source & Traceability</div>
             <div className="text-slate-700 dark:text-slate-300 font-medium capitalize text-xs">
               {incident.source.toLowerCase().replace('_', ' ')}
             </div>
             {incident.sourceReference && (
-              <div className="text-[10px] font-mono text-slate-400 mt-0.5">{incident.sourceReference}</div>
+              <div className="text-[10px] font-mono text-cyan-600 dark:text-accent mt-0.5">Ref: {incident.sourceReference}</div>
             )}
+            <div className="text-[9px] text-slate-400 mt-1">Reported by: {incident.createdBy}</div>
+          </div>
+        </div>
+
+        {/* Evidence Photos (if attached) */}
+        {incident.evidence && incident.evidence.length > 0 && (
+          <div className="p-3 rounded-lg bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/10 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide flex items-center gap-1.5">
+                <Camera className="w-3.5 h-3.5 text-accent" />
+                Attached Evidence Photos ({incident.evidence.length})
+              </span>
+              <span className="text-[9px] text-emerald-600 dark:text-emerald-400 font-semibold">
+                ✓ Ground Evidence Logged
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {incident.evidence.map((ev) => (
+                <EvidencePreview key={ev.id} evidence={ev} size="sm" readOnly />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Response & Logistics Workflow Continuity (Step 19) */}
+        <div className="p-3 rounded-lg bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/10 space-y-2">
+          <div className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 flex items-center justify-between">
+            <span>Operational Response Workflow</span>
+            <span className="text-[10px] text-accent font-normal">Next Steps</span>
+          </div>
+          <div className="grid grid-cols-3 gap-1.5 pt-0.5">
+            <Link
+              href="/operations"
+              className="p-2 rounded-lg bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:border-accent/40 text-center transition-colors group"
+            >
+              <div className="text-base group-hover:scale-110 transition-transform">🚛</div>
+              <div className="text-[10px] font-semibold text-slate-700 dark:text-slate-200 mt-1">Field Ops</div>
+            </Link>
+            <Link
+              href="/shelters"
+              className="p-2 rounded-lg bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:border-accent/40 text-center transition-colors group"
+            >
+              <div className="text-base group-hover:scale-110 transition-transform">⛺</div>
+              <div className="text-[10px] font-semibold text-slate-700 dark:text-slate-200 mt-1">Shelters</div>
+            </Link>
+            <Link
+              href="/resources"
+              className="p-2 rounded-lg bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:border-accent/40 text-center transition-colors group"
+            >
+              <div className="text-base group-hover:scale-110 transition-transform">📦</div>
+              <div className="text-[10px] font-semibold text-slate-700 dark:text-slate-200 mt-1">Resources</div>
+            </Link>
           </div>
         </div>
 

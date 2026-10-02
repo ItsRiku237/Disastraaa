@@ -113,6 +113,7 @@ export function IncidentManagementDashboard({ initialRole }: Props) {
       const updated = incidents.find((i) => i.id === selected.id);
       if (updated) setSelected(updated);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [incidents, selected?.id]);
 
   const publicBlocked = role === ROLES.CITIZEN;

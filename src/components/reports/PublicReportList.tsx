@@ -40,7 +40,8 @@ import {
   createCitizenReport,
 } from '@/lib/reports';
 import { demoCitizenReports } from '@/data/demo/citizenReports';
-import { demoDataset } from '@/data/demo';
+import { useRouter } from 'next/navigation';
+import { useLiveIntelligence } from '@/context/LiveIntelligenceContext';
 import { CitizenReportForm } from './CitizenReportForm';
 import { ReportDetailPanel } from './ReportDetailPanel';
 
@@ -59,7 +60,11 @@ type FilterCategory =
 type SortOption = 'NEWEST' | 'SEVERITY' | 'CONFIRMATIONS';
 
 export function PublicReportList() {
-  const [reports, setReports]                 = useState<CitizenReportItem[]>(demoCitizenReports);
+  const router = useRouter();
+  const { overrides, submitCitizenReport } = useLiveIntelligence();
+  const [localReports, setLocalReports] = useState<CitizenReportItem[] | null>(null);
+  const reports = localReports ?? overrides.reports;
+
   const [selectedReport, setSelectedReport]   = useState<CitizenReportItem | null>(null);
   const [isFormOpen, setIsFormOpen]           = useState(false);
   const [filterCategory, setFilterCategory]   = useState<FilterCategory>('ALL');
@@ -86,16 +91,18 @@ export function PublicReportList() {
   }, [reports, filterCategory, searchQuery, sortBy]);
 
   // Handle new report submission
-  const handleCreateReport = (input: CreateReportInput) => {
-    const newReport = createCitizenReport(input, demoDataset);
-    setReports((prev) => [newReport, ...prev]);
-    setIsFormOpen(false);
-    setSelectedReport(newReport);
+  const handleCreateReport = async (input: CreateReportInput) => {
+    const res = await submitCitizenReport(input);
+    setSelectedReport(res.report);
+    return res;
   };
 
   // Handle report update (from detail panel votes or authority actions)
   const handleUpdateReport = (updated: CitizenReportItem) => {
-    setReports((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
+    setLocalReports((prev) => {
+      const base = prev ?? overrides.reports;
+      return base.map((r) => (r.id === updated.id ? updated : r));
+    });
     if (selectedReport?.id === updated.id) {
       setSelectedReport(updated);
     }
@@ -105,10 +112,14 @@ export function PublicReportList() {
     <div className="space-y-6">
       {/* ── Submission Modal ── */}
       {isFormOpen && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-          <div className="w-full max-w-xl max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-fade-in">
+          <div className="w-full max-w-2xl max-h-[92vh] overflow-y-auto">
             <CitizenReportForm
               onSubmitReport={handleCreateReport}
+              onViewOnMap={() => {
+                setIsFormOpen(false);
+                router.push('/map');
+              }}
               onCancel={() => setIsFormOpen(false)}
             />
           </div>

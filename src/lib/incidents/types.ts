@@ -22,6 +22,9 @@ export const INCIDENT_TYPES = {
   INFRASTRUCTURE_DAMAGE:'INFRASTRUCTURE_DAMAGE',
   CITIZEN_REPORT:       'CITIZEN_REPORT',
   EVACUATION:           'EVACUATION',
+  LANDSLIDE:            'LANDSLIDE',
+  FIRE:                 'FIRE',
+  MISSING_PERSON:       'MISSING_PERSON',
   OTHER:                'OTHER',
 } as const;
 export type IncidentType = (typeof INCIDENT_TYPES)[keyof typeof INCIDENT_TYPES];
@@ -211,6 +214,7 @@ export interface Incident {
 
   // Counts for quick display
   affectedPopulation?: number;
+  evidence?:          import('@/lib/reports/evidence/types').StructuredReportEvidence[];
 }
 
 // ── Create Input ──────────────────────────────────────────────────────────────
@@ -232,6 +236,9 @@ export interface CreateIncidentInput {
   affectedPopulation?: number;
   relatedAlertIds?:   string[];
   relatedReportIds?:  string[];
+  relatedRoadIds?:    string[];
+  relatedShelterIds?: string[];
+  evidence?:          import('@/lib/reports/evidence/types').StructuredReportEvidence[];
 }
 
 // ── Update Input ──────────────────────────────────────────────────────────────

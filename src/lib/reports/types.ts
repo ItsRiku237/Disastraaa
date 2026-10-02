@@ -22,17 +22,20 @@ export * from './evidence/types';
 // ── Report Types ─────────────────────────────────────────────────────────────
 
 export const REPORT_TYPES = {
-  FLOOD:              'FLOOD',
-  CYCLONE:            'CYCLONE',
-  WATER_LEVEL:        'WATER_LEVEL',
-  BLOCKED_ROAD:       'BLOCKED_ROAD',
-  DAMAGED_ROAD:       'DAMAGED_ROAD',
-  DAMAGED_BUILDING:   'DAMAGED_BUILDING',
-  MEDICAL_EMERGENCY:  'MEDICAL_EMERGENCY',
-  SHELTER_ISSUE:      'SHELTER_ISSUE',
-  POWER_OUTAGE:       'POWER_OUTAGE',
-  LANDSLIDE:          'LANDSLIDE',
-  OTHER:              'OTHER',
+  FLOOD:                 'FLOOD',
+  CYCLONE:               'CYCLONE',
+  WATER_LEVEL:           'WATER_LEVEL',
+  BLOCKED_ROAD:          'BLOCKED_ROAD',
+  DAMAGED_ROAD:          'DAMAGED_ROAD',
+  DAMAGED_BUILDING:      'DAMAGED_BUILDING',
+  INFRASTRUCTURE_DAMAGE: 'INFRASTRUCTURE_DAMAGE',
+  FIRE:                  'FIRE',
+  MEDICAL_EMERGENCY:     'MEDICAL_EMERGENCY',
+  MISSING_PERSON:        'MISSING_PERSON',
+  SHELTER_ISSUE:         'SHELTER_ISSUE',
+  POWER_OUTAGE:          'POWER_OUTAGE',
+  LANDSLIDE:             'LANDSLIDE',
+  OTHER:                 'OTHER',
 } as const;
 
 export type ReportType = (typeof REPORT_TYPES)[keyof typeof REPORT_TYPES];

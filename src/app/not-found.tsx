@@ -14,10 +14,10 @@ export default function NotFound() {
           The page you&apos;re looking for doesn&apos;t exist or has been moved.
         </p>
         <Link
-          href="/"
+          href="/map"
           className="inline-flex items-center gap-2 px-4 py-2 bg-surface-card border border-white/10 rounded-lg text-sm text-slate-100 hover:border-white/20 transition-all"
         >
-          ← Return home
+          ← Return to map
         </Link>
       </div>
     </div>

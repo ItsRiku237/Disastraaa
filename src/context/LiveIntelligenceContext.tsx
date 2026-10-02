@@ -32,6 +32,14 @@ import { demoDataset } from '@/data/demo';
 import { demoCitizenReports } from '@/data/demo/citizenReports';
 import { demoRoadSegments } from '@/data/demo';
 import { LiveIntelligenceDrawer } from '@/components/realtime/LiveIntelligenceDrawer';
+import { createCitizenReport, saveReport, type CreateReportInput } from '@/lib/reports';
+import {
+  createIncident,
+  saveIncident,
+  mapReportTypeToIncidentType,
+  mapReportSeverityToIncidentSeverity,
+} from '@/lib/incidents';
+import { ROLES } from '@/types/roles';
 
 const INITIAL_OVERRIDES: LiveDataOverrides = {
   alerts: demoDataset.alerts,
@@ -183,6 +191,79 @@ export function LiveIntelligenceProvider({ children }: { children: React.ReactNo
     setUnreadEventCount(0);
   }, []);
 
+  // Submit citizen report via API with local fallback
+  const submitCitizenReport = useCallback(async (input: CreateReportInput) => {
+    try {
+      const res = await fetch('/api/reports', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(input),
+      });
+      const data = await res.json();
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to submit report');
+      }
+      const { report, incident } = data;
+
+      saveIncident(incident);
+
+      setOverrides((prev) => ({
+        ...prev,
+        reports: [report, ...prev.reports.filter((r) => r.id !== report.id)],
+      }));
+
+      const newLiveEvent: LiveEvent = {
+        id: `ev-report-${report.id}-${Date.now()}`,
+        type: 'REPORT_RECEIVED',
+        timestamp: new Date().toISOString(),
+        timeFormatted: 'Just now',
+        locationName: report.address || 'Field Observation',
+        district: report.administrativeArea,
+        title: `Citizen Report: ${report.title}`,
+        summary: report.description.slice(0, 100),
+        severity: report.severity,
+        category: 'REPORT',
+        metadata: { reportId: report.id, incidentId: incident.id },
+      };
+
+      setRecentEvents((prev) => [newLiveEvent, ...prev.slice(0, 19)]);
+      setUnreadEventCount((prev) => prev + 1);
+      setLastSyncTime(new Date());
+      setSecondsSinceSync(0);
+
+      return { report, incident };
+    } catch {
+      // Local fallback
+      const report = createCitizenReport(input, demoDataset);
+      saveReport(report);
+      const incType = mapReportTypeToIncidentType(report.reportType);
+      const incSev = mapReportSeverityToIncidentSeverity(report.severity);
+      const incident = createIncident({
+        title: report.title,
+        description: report.description,
+        incidentType: incType,
+        hazardType: report.hazardType,
+        severity: incSev,
+        locationName: report.address,
+        coordinates: report.coordinates,
+        affectedArea: report.administrativeArea,
+        source: 'CITIZEN_REPORT',
+        sourceReference: report.id,
+        dataLabel: 'CITIZEN_REPORT',
+        createdBy: report.reporter.name || 'Citizen Reporter',
+        createdByRole: ROLES.CITIZEN,
+        relatedReportIds: [report.id],
+        evidence: report.evidence,
+      });
+      saveIncident(incident);
+      setOverrides((prev) => ({
+        ...prev,
+        reports: [report, ...prev.reports.filter((r) => r.id !== report.id)],
+      }));
+      return { report, incident };
+    }
+  }, []);
+
   // Freshness second ticker
   useEffect(() => {
     const timer = setInterval(() => {
@@ -238,6 +319,7 @@ export function LiveIntelligenceProvider({ children }: { children: React.ReactNo
       openDrawer,
       closeDrawer,
       setIsDrawerOpen,
+      submitCitizenReport,
     };
   }, [
     status,
@@ -262,6 +344,7 @@ export function LiveIntelligenceProvider({ children }: { children: React.ReactNo
     markEventsRead,
     openDrawer,
     closeDrawer,
+    submitCitizenReport,
   ]);
 
   return (

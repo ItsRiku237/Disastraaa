@@ -8,3 +8,4 @@ export * from './types';
 export * from './rules';
 export * from './engine';
 export * from './evidence';
+export * from './store';
